@@ -1,0 +1,10 @@
+# Secrets — never commit
+.streamlit/secrets.toml
+
+# Pre-computed embeddings (large file, recomputed on deploy)
+data/embeddings.npy
+
+# Python
+__pycache__/
+*.pyc
+.env
