@@ -1,5 +1,7 @@
 # ⚾ FieldVision — Baseball Scouting Intelligence
 
+> 🚧 **This project is currently in progress.**
+
 FieldVision is an AI-powered baseball scouting platform built for Saint Mary's College of California. It transforms handwritten scouting notes into structured, actionable intelligence by combining Claude AI with a historical scouting knowledge base built from the Branch Rickey Papers.
 
 ---
