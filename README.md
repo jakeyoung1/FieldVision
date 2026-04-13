@@ -124,9 +124,3 @@ streamlit run app.py
 - Player comparison and talent pool filtering
 - Expanded historical knowledge base
 
----
-
-## Built By
-
-Saint Mary's College of California Baseball  
-Built with [Claude](https://anthropic.com) and [Streamlit](https://streamlit.io)
