@@ -299,6 +299,167 @@ def build_pdf(title: str, body: str) -> bytes:
 
 
 # ---------------------------------------------------------------------------
+# Trackman — summarize CSV into clean text for Claude
+# ---------------------------------------------------------------------------
+def summarize_trackman(df: pd.DataFrame) -> str:
+    lines = []
+
+    # Game metadata
+    date   = df["Date"].iloc[0] if "Date" in df.columns else "Unknown"
+    stadium = df["Stadium"].iloc[0] if "Stadium" in df.columns else "Unknown"
+    home   = df["HomeTeam"].iloc[0] if "HomeTeam" in df.columns else "Unknown"
+    away   = df["AwayTeam"].iloc[0] if "AwayTeam" in df.columns else "Unknown"
+    lines.append(f"Game: {away} @ {home} | {date} | {stadium}")
+    lines.append(f"Total pitches tracked: {len(df)}\n")
+
+    # --- Per-pitcher summary ---
+    lines.append("=== PITCHING SUMMARY ===")
+    pitchers = df.groupby("Pitcher")
+    for pitcher, pdf in pitchers:
+        team = pdf["PitcherTeam"].iloc[0]
+        throws = pdf["PitcherThrows"].iloc[0]
+        total = len(pdf)
+        lines.append(f"\n{pitcher} ({throws}H) — {team} | {total} pitches")
+
+        # Pitch mix
+        if "TaggedPitchType" in df.columns:
+            mix = pdf["TaggedPitchType"].value_counts()
+            mix_str = ", ".join([f"{pt}: {cnt} ({cnt/total*100:.0f}%)" for pt, cnt in mix.items()])
+            lines.append(f"  Pitch mix: {mix_str}")
+
+        # Stats per pitch type
+        for pitch_type, ptdf in pdf.groupby("TaggedPitchType"):
+            stats = []
+            if "RelSpeed" in df.columns:
+                avg_v = ptdf["RelSpeed"].mean()
+                stats.append(f"Velo: {avg_v:.1f} mph")
+            if "SpinRate" in df.columns:
+                avg_spin = ptdf["SpinRate"].mean()
+                stats.append(f"Spin: {avg_spin:.0f} rpm")
+            if "InducedVertBreak" in df.columns:
+                avg_ivb = ptdf["InducedVertBreak"].mean()
+                stats.append(f"IVB: {avg_ivb:.1f}\"")
+            if "HorzBreak" in df.columns:
+                avg_hb = ptdf["HorzBreak"].mean()
+                stats.append(f"HB: {avg_hb:.1f}\"")
+            if stats:
+                lines.append(f"    {pitch_type}: {' | '.join(stats)}")
+
+        # Strike/ball/results
+        if "PitchCall" in df.columns:
+            calls = pdf["PitchCall"].value_counts()
+            strikes = calls.get("StrikeCalled", 0) + calls.get("StrikeSwinging", 0) + calls.get("FoulBall", 0) + calls.get("InPlay", 0)
+            balls = calls.get("BallCalled", 0)
+            strike_pct = strikes / total * 100 if total > 0 else 0
+            lines.append(f"  Strike%: {strike_pct:.0f}% | Strikes: {strikes} | Balls: {balls}")
+
+        if "KorBB" in df.columns:
+            ks  = (pdf["KorBB"] == "Strikeout").sum()
+            bbs = (pdf["KorBB"] == "Walk").sum()
+            lines.append(f"  K: {ks} | BB: {bbs}")
+
+    # --- Per-batter summary ---
+    lines.append("\n=== BATTING SUMMARY ===")
+    batters = df.groupby("Batter")
+    for batter, bdf in batters:
+        team = bdf["BatterTeam"].iloc[0]
+        side = bdf["BatterSide"].iloc[0]
+        pa   = bdf["PAofInning"].nunique()
+        lines.append(f"\n{batter} ({side}H) — {team} | ~{pa} PA")
+
+        if "PlayResult" in df.columns:
+            results = bdf["PlayResult"].value_counts()
+            result_str = ", ".join([f"{r}: {c}" for r, c in results.items() if r not in ("Undefined", "")])
+            if result_str:
+                lines.append(f"  Results: {result_str}")
+
+        if "KorBB" in df.columns:
+            ks  = (bdf["KorBB"] == "Strikeout").sum()
+            bbs = (bdf["KorBB"] == "Walk").sum()
+            if ks or bbs:
+                lines.append(f"  K: {ks} | BB: {bbs}")
+
+        contact = bdf[bdf["ExitSpeed"].notna() & (bdf["ExitSpeed"] > 0)] if "ExitSpeed" in df.columns else pd.DataFrame()
+        if not contact.empty:
+            avg_ev = contact["ExitSpeed"].mean()
+            max_ev = contact["ExitSpeed"].max()
+            lines.append(f"  Exit Velo: avg {avg_ev:.1f} mph | max {max_ev:.1f} mph")
+        if "Angle" in df.columns and not contact.empty:
+            avg_la = contact["Angle"].mean()
+            lines.append(f"  Launch Angle: avg {avg_la:.1f} deg")
+
+    return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# Trackman — Claude analysis
+# ---------------------------------------------------------------------------
+def analyze_trackman(
+    client: anthropic.Anthropic,
+    summary: str,
+    notes_context: str = "",
+    output_focus: str = "",
+) -> str:
+    user_context_block = ""
+    if notes_context:
+        user_context_block += f"\nContext: {notes_context}"
+    if output_focus:
+        user_context_block += f"\nFocus on: {output_focus}"
+
+    prompt = f"""Here is a Trackman pitch-by-pitch data summary from a baseball game:{user_context_block}
+
+TRACKMAN DATA SUMMARY:
+{summary}
+
+Provide:
+
+## Summary
+A brief 2-3 sentence overview of what happened in this game from a pitching and hitting standpoint.
+
+## Actionable Recommendations
+2 specific recommendations grounded directly in the data above.
+
+## Bonus Insight
+One deeper observation — an interesting pattern, matchup, or trend in the data worth flagging to the coaching staff."""
+
+    response = client.messages.create(
+        model=CLAUDE_MODEL,
+        max_tokens=1024,
+        system=SYSTEM_PROMPT,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    return response.content[0].text
+
+
+# ---------------------------------------------------------------------------
+# Shared chat renderer
+# ---------------------------------------------------------------------------
+def render_chat(client: anthropic.Anthropic, context: str, state_key: str) -> None:
+    st.markdown('<p class="fv-label">Ask the Scout</p>', unsafe_allow_html=True)
+    st.markdown("""
+        <div class="fv-card fv-card-navy" style="margin-bottom:1.25rem; padding: 1rem 1.25rem;">
+            <span style="color:rgba(255,255,255,0.6); font-size:0.85rem;">
+                The scout has full context from the analysis above. Ask anything.
+            </span>
+        </div>
+    """, unsafe_allow_html=True)
+
+    for msg in st.session_state[state_key]:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+
+    if user_input := st.chat_input("Ask a follow-up question…", key=f"chat_input_{state_key}"):
+        st.session_state[state_key].append({"role": "user", "content": user_input})
+        with st.chat_message("user"):
+            st.markdown(user_input)
+        with st.chat_message("assistant"):
+            with st.spinner("Thinking…"):
+                reply = chat_response(client, context, st.session_state[state_key])
+            st.markdown(reply)
+        st.session_state[state_key].append({"role": "assistant", "content": reply})
+
+
+# ---------------------------------------------------------------------------
 # UI helpers
 # ---------------------------------------------------------------------------
 def collect_images(uploaded_files) -> list[tuple[str, Image.Image]]:
@@ -515,13 +676,21 @@ hr { border-color: rgba(255,255,255,0.06) !important; margin: 2rem 0 !important;
 # ---------------------------------------------------------------------------
 def main():
     # Session state init
+    # NOTE: When session IDs are added, persist these slots per session_id
+    # so all uploaded content (notes + trackman) can be combined as context.
     for key, default in [
-        ("analyzed", False),
-        ("combined_transcription", ""),
-        ("insights", ""),
-        ("rag_context", []),
-        ("images", []),
-        ("chat_messages", []),
+        # Handwritten notes tab
+        ("notes_analyzed", False),
+        ("notes_transcription", ""),
+        ("notes_insights", ""),
+        ("notes_rag_context", []),
+        ("notes_images", []),
+        ("notes_chat", []),
+        # Trackman tab
+        ("trackman_analyzed", False),
+        ("trackman_summary", ""),
+        ("trackman_insights", ""),
+        ("trackman_chat", []),
     ]:
         if key not in st.session_state:
             st.session_state[key] = default
@@ -542,166 +711,206 @@ def main():
 
     client = get_client()
 
-    # Upload section
-    st.markdown('<p class="fv-label">Scouting Notes</p>', unsafe_allow_html=True)
-    uploaded_files = st.file_uploader(
-        "Upload images or PDFs of handwritten scouting notes",
-        type=["jpg", "jpeg", "png", "pdf"],
-        accept_multiple_files=True,
-        label_visibility="collapsed",
-    )
+    # ── Tabs ──────────────────────────────────────────────────────────────────
+    tab_notes, tab_trackman = st.tabs(["📋 Handwritten Notes", "📊 Trackman Data"])
 
-    st.markdown('<p class="fv-label">Context</p>', unsafe_allow_html=True)
-    col_a, col_b = st.columns(2)
-    with col_a:
-        notes_context = st.text_input(
-            "What are these notes about?",
-            placeholder="e.g. Pitching eval for a high school recruit…",
-        )
-    with col_b:
-        output_focus = st.text_input(
-            "What would you like to focus on?",
-            placeholder="e.g. Arm strength, whether to offer a scholarship…",
+    # =========================================================================
+    # TAB 1 — Handwritten Notes
+    # =========================================================================
+    with tab_notes:
+        st.markdown('<p class="fv-label">Scouting Notes</p>', unsafe_allow_html=True)
+        uploaded_files = st.file_uploader(
+            "Upload images or PDFs of handwritten scouting notes",
+            type=["jpg", "jpeg", "png", "pdf"],
+            accept_multiple_files=True,
+            label_visibility="collapsed",
+            key="notes_uploader",
         )
 
-    if not uploaded_files:
-        st.markdown("""
-            <div class="fv-card" style="text-align:center; padding: 3rem; margin-top:1rem;">
-                <div style="font-size:2rem; margin-bottom:0.75rem;">📋</div>
-                <div style="color:rgba(240,236,226,0.4); font-size:0.9rem;">
-                    Upload scouting note images or PDFs above to get started
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-        return
-
-    st.markdown(f'<div class="fv-badge">✓ {len(uploaded_files)} file(s) ready</div>', unsafe_allow_html=True)
-
-    if st.button("Transcribe & Analyze", type="primary", use_container_width=True):
-        with st.spinner("Reading files…"):
-            images = collect_images(uploaded_files)
-
-        if not images:
-            st.error("No readable images found.")
-            return
-
-        transcriptions = []
-        with st.spinner(f"Transcribing {len(images)} page(s)…"):
-            for name, image in images:
-                text = transcribe_image(client, image)
-                transcriptions.append(text)
-
-        if not transcriptions:
-            st.error("No transcriptions generated.")
-            return
-
-        combined_transcription = "\n\n".join(transcriptions)
-
-        with st.spinner("Searching historical scouting database…"):
-            context = retrieve_context(combined_transcription, rag_index, rag_df)
-
-        with st.spinner("Generating insights…"):
-            insights = generate_insights(
-                client, combined_transcription, context,
-                notes_context=notes_context, output_focus=output_focus,
+        st.markdown('<p class="fv-label">Context</p>', unsafe_allow_html=True)
+        col_a, col_b = st.columns(2)
+        with col_a:
+            notes_context = st.text_input(
+                "What are these notes about?",
+                placeholder="e.g. Pitching eval for a high school recruit…",
+                key="notes_context",
+            )
+        with col_b:
+            notes_focus = st.text_input(
+                "What would you like to focus on?",
+                placeholder="e.g. Arm strength, whether to offer a scholarship…",
+                key="notes_focus",
             )
 
-        st.session_state.analyzed = True
-        st.session_state.combined_transcription = combined_transcription
-        st.session_state.insights = insights
-        st.session_state.rag_context = context
-        st.session_state.images = images
-        st.session_state.chat_messages = []
+        if not uploaded_files:
+            st.markdown("""
+                <div class="fv-card" style="text-align:center; padding:3rem; margin-top:1rem;">
+                    <div style="font-size:2rem; margin-bottom:0.75rem;">📋</div>
+                    <div style="color:rgba(255,255,255,0.35); font-size:0.9rem;">
+                        Upload scouting note images or PDFs above to get started
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown(f'<div class="fv-badge">✓ {len(uploaded_files)} file(s) ready</div>', unsafe_allow_html=True)
 
-    if not st.session_state.analyzed:
-        return
+            if st.button("Transcribe & Analyze", type="primary", use_container_width=True, key="notes_btn"):
+                with st.spinner("Reading files…"):
+                    images = collect_images(uploaded_files)
 
-    images               = st.session_state.images
-    combined_transcription = st.session_state.combined_transcription
-    insights             = st.session_state.insights
-    context              = st.session_state.rag_context
+                transcriptions = []
+                with st.spinner(f"Transcribing {len(images)} page(s)…"):
+                    for name, image in images:
+                        transcriptions.append(transcribe_image(client, image))
 
-    st.markdown("<hr>", unsafe_allow_html=True)
+                combined = "\n\n".join(transcriptions)
 
-    # Thumbnails
-    st.markdown('<p class="fv-label">Uploaded Pages</p>', unsafe_allow_html=True)
-    thumb_cols = st.columns(min(len(images), 4))
-    for i, (name, image) in enumerate(images):
-        with thumb_cols[i % 4]:
-            st.image(image, caption=name, use_container_width=True)
+                with st.spinner("Searching historical scouting database…"):
+                    context = retrieve_context(combined, rag_index, rag_df)
 
-    # Transcription
-    with st.expander("📄 View Combined Transcription", expanded=False):
-        st.text_area(
-            label="combined",
-            value=combined_transcription,
-            height=300,
+                with st.spinner("Generating insights…"):
+                    insights = generate_insights(
+                        client, combined, context,
+                        notes_context=notes_context, output_focus=notes_focus,
+                    )
+
+                st.session_state.notes_analyzed     = True
+                st.session_state.notes_transcription = combined
+                st.session_state.notes_insights      = insights
+                st.session_state.notes_rag_context   = context
+                st.session_state.notes_images        = images
+                st.session_state.notes_chat          = []
+
+        if st.session_state.notes_analyzed:
+            images   = st.session_state.notes_images
+            combined = st.session_state.notes_transcription
+            insights = st.session_state.notes_insights
+            context  = st.session_state.notes_rag_context
+
+            st.markdown("<hr>", unsafe_allow_html=True)
+
+            st.markdown('<p class="fv-label">Uploaded Pages</p>', unsafe_allow_html=True)
+            thumb_cols = st.columns(min(len(images), 4))
+            for i, (name, image) in enumerate(images):
+                with thumb_cols[i % 4]:
+                    st.image(image, caption=name, use_container_width=True)
+
+            with st.expander("📄 View Combined Transcription", expanded=False):
+                st.text_area("combined", value=combined, height=300, label_visibility="collapsed")
+
+            st.markdown('<p class="fv-label">Scouting Intelligence Report</p>', unsafe_allow_html=True)
+            st.markdown('<div class="fv-report">', unsafe_allow_html=True)
+            st.markdown(insights)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+            with st.expander("📚 Historical Reports Used for Context", expanded=False):
+                for i, ctx in enumerate(context, 1):
+                    st.markdown(f"**Report {i}** — relevance `{ctx['score']:.3f}`")
+                    st.caption(ctx["item"])
+                    st.text(ctx["text"][:600] + ("…" if len(ctx["text"]) > 600 else ""))
+                    st.divider()
+
+            st.markdown("<hr>", unsafe_allow_html=True)
+            st.markdown('<p class="fv-label">Download Reports</p>', unsafe_allow_html=True)
+            col1, col2 = st.columns(2)
+            with col1:
+                st.download_button(
+                    "⬇ Digitized Notes (.pdf)",
+                    data=bytes(build_pdf("Digitized Scouting Notes", combined)),
+                    file_name="scouting_notes.pdf", mime="application/pdf",
+                    use_container_width=True,
+                )
+            with col2:
+                st.download_button(
+                    "⬇ Analysis Report (.pdf)",
+                    data=bytes(build_pdf("Scouting Intelligence Report", insights)),
+                    file_name="scouting_analysis.pdf", mime="application/pdf",
+                    use_container_width=True,
+                )
+
+            st.markdown("<hr>", unsafe_allow_html=True)
+            render_chat(client, combined, "notes_chat")
+
+    # =========================================================================
+    # TAB 2 — Trackman Data
+    # =========================================================================
+    with tab_trackman:
+        st.markdown('<p class="fv-label">Trackman CSV</p>', unsafe_allow_html=True)
+        csv_file = st.file_uploader(
+            "Upload a Trackman CSV export",
+            type=["csv"],
             label_visibility="collapsed",
+            key="trackman_uploader",
         )
 
-    # Report
-    st.markdown('<p class="fv-label">Scouting Intelligence Report</p>', unsafe_allow_html=True)
-    st.markdown('<div class="fv-report">', unsafe_allow_html=True)
-    st.markdown(insights)
-    st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('<p class="fv-label">Context</p>', unsafe_allow_html=True)
+        col_a, col_b = st.columns(2)
+        with col_a:
+            tm_context = st.text_input(
+                "What are you looking to evaluate?",
+                placeholder="e.g. Pitching staff performance, opponent tendencies…",
+                key="tm_context",
+            )
+        with col_b:
+            tm_focus = st.text_input(
+                "What would you like to focus on?",
+                placeholder="e.g. Spin rate trends, exit velocity against lefties…",
+                key="tm_focus",
+            )
 
-    with st.expander("📚 Historical Reports Used for Context", expanded=False):
-        for i, ctx in enumerate(context, 1):
-            st.markdown(f"**Report {i}** — relevance `{ctx['score']:.3f}`")
-            st.caption(ctx["item"])
-            st.text(ctx["text"][:600] + ("…" if len(ctx["text"]) > 600 else ""))
-            st.divider()
+        if not csv_file:
+            st.markdown("""
+                <div class="fv-card" style="text-align:center; padding:3rem; margin-top:1rem;">
+                    <div style="font-size:2rem; margin-bottom:0.75rem;">📊</div>
+                    <div style="color:rgba(255,255,255,0.35); font-size:0.9rem;">
+                        Upload a Trackman CSV export above to get started
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown('<div class="fv-badge">✓ CSV ready</div>', unsafe_allow_html=True)
 
-    # Downloads
-    st.markdown("<hr>", unsafe_allow_html=True)
-    st.markdown('<p class="fv-label">Download Reports</p>', unsafe_allow_html=True)
-    col1, col2 = st.columns(2)
-    with col1:
-        notes_pdf = build_pdf("Digitized Scouting Notes", combined_transcription)
-        st.download_button(
-            label="⬇ Digitized Notes (.pdf)",
-            data=bytes(notes_pdf),
-            file_name="scouting_notes.pdf",
-            mime="application/pdf",
-            use_container_width=True,
-        )
-    with col2:
-        analysis_pdf = build_pdf("Scouting Intelligence Report", insights)
-        st.download_button(
-            label="⬇ Analysis Report (.pdf)",
-            data=bytes(analysis_pdf),
-            file_name="scouting_analysis.pdf",
-            mime="application/pdf",
-            use_container_width=True,
-        )
+            if st.button("Analyze Trackman Data", type="primary", use_container_width=True, key="tm_btn"):
+                with st.spinner("Parsing CSV…"):
+                    df = pd.read_csv(csv_file)
+                    summary = summarize_trackman(df)
 
-    # Chat
-    st.markdown("<hr>", unsafe_allow_html=True)
-    st.markdown('<p class="fv-label">Ask the Scout</p>', unsafe_allow_html=True)
-    st.markdown("""
-        <div class="fv-card fv-card-navy" style="margin-bottom:1.25rem; padding: 1rem 1.25rem;">
-            <span style="color:rgba(255,255,255,0.6); font-size:0.85rem;">
-                The scout has full context from the notes and analysis above.
-                Ask anything — follow-ups, deeper dives, specific player questions.
-            </span>
-        </div>
-    """, unsafe_allow_html=True)
+                with st.spinner("Generating insights…"):
+                    insights = analyze_trackman(
+                        client, summary,
+                        notes_context=tm_context, output_focus=tm_focus,
+                    )
 
-    for msg in st.session_state.chat_messages:
-        with st.chat_message(msg["role"]):
-            st.markdown(msg["content"])
+                st.session_state.trackman_analyzed = True
+                st.session_state.trackman_summary  = summary
+                st.session_state.trackman_insights = insights
+                st.session_state.trackman_chat     = []
 
-    if user_input := st.chat_input("Ask a follow-up question about these notes…"):
-        st.session_state.chat_messages.append({"role": "user", "content": user_input})
-        with st.chat_message("user"):
-            st.markdown(user_input)
+        if st.session_state.trackman_analyzed:
+            summary  = st.session_state.trackman_summary
+            insights = st.session_state.trackman_insights
 
-        with st.chat_message("assistant"):
-            with st.spinner("Thinking…"):
-                reply = chat_response(client, combined_transcription, st.session_state.chat_messages)
-            st.markdown(reply)
+            st.markdown("<hr>", unsafe_allow_html=True)
 
-        st.session_state.chat_messages.append({"role": "assistant", "content": reply})
+            with st.expander("📄 View Data Summary", expanded=False):
+                st.text_area("summary", value=summary, height=300, label_visibility="collapsed")
+
+            st.markdown('<p class="fv-label">Trackman Intelligence Report</p>', unsafe_allow_html=True)
+            st.markdown('<div class="fv-report">', unsafe_allow_html=True)
+            st.markdown(insights)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+            st.markdown("<hr>", unsafe_allow_html=True)
+            st.markdown('<p class="fv-label">Download Report</p>', unsafe_allow_html=True)
+            st.download_button(
+                "⬇ Trackman Analysis (.pdf)",
+                data=bytes(build_pdf("Trackman Intelligence Report", insights)),
+                file_name="trackman_analysis.pdf", mime="application/pdf",
+                use_container_width=True,
+            )
+
+            st.markdown("<hr>", unsafe_allow_html=True)
+            render_chat(client, summary, "trackman_chat")
 
         with st.chat_message("assistant"):
             with st.spinner("Thinking…"):
