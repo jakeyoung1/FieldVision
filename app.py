@@ -11,6 +11,7 @@ try:
 except ImportError:
     PDF_SUPPORT = False
 
+import uuid
 import base64
 import faiss
 from fpdf import FPDF
@@ -52,6 +53,21 @@ When answering follow-up questions:
 - Be direct and concise
 - If something isn't in the notes, say so rather than speculating
 """
+
+
+# ---------------------------------------------------------------------------
+# Session context builder
+# ---------------------------------------------------------------------------
+def build_session_context(session_items: list[dict]) -> str:
+    """Combine all prior session uploads into a single context block."""
+    if not session_items:
+        return ""
+    lines = ["=== PRIOR SESSION MATERIALS (use as background context) ==="]
+    for item in session_items:
+        lines.append(f"\n[{item['type'].upper()} — {item['label']}]")
+        # Truncate each item to avoid token overflow
+        lines.append(item["content"][:4000])
+    return "\n".join(lines)
 
 
 # ---------------------------------------------------------------------------
@@ -186,6 +202,7 @@ def generate_insights(
     historical_context: list[dict],
     notes_context: str = "",
     output_focus: str = "",
+    session_context: str = "",
 ) -> str:
     historical_text = ""
     for i, ctx in enumerate(historical_context, 1):
@@ -198,7 +215,9 @@ def generate_insights(
     if output_focus:
         user_context_block += f"\nFocus the output on: {output_focus}"
 
-    prompt = f"""Here are the scouting notes to analyze:{user_context_block}
+    session_block = f"\n\n{session_context}" if session_context else ""
+
+    prompt = f"""Here are the scouting notes to analyze:{user_context_block}{session_block}
 
 SCOUTING NOTES:
 {transcription}
@@ -231,16 +250,22 @@ Draw one additional insight by connecting something in these notes to the histor
 # ---------------------------------------------------------------------------
 def chat_response(
     client: anthropic.Anthropic,
-    transcription: str,
+    context: str,
     chat_history: list[dict],
+    session_context: str = "",
 ) -> str:
-    context_message = f"""For reference, here are the scouting notes we are discussing:
+    session_block = f"\n\n{session_context}" if session_context else ""
+    context_message = f"""For reference, here is all the material available for this session:{session_block}
 
-{transcription}
+CURRENT DOCUMENT:
+{context}
 
-Now answer the user's follow-up question based on these notes."""
+Answer the user's question based on this material."""
 
-    messages = [{"role": "user", "content": context_message}, {"role": "assistant", "content": "Understood. I have the scouting notes loaded. What would you like to know?"}]
+    messages = [
+        {"role": "user",      "content": context_message},
+        {"role": "assistant", "content": "Understood. I have all the session materials loaded. What would you like to know?"},
+    ]
     messages += chat_history
 
     response = client.messages.create(
@@ -305,88 +330,88 @@ def summarize_trackman(df: pd.DataFrame) -> str:
     lines = []
 
     # Game metadata
-    date   = df["Date"].iloc[0] if "Date" in df.columns else "Unknown"
-    stadium = df["Stadium"].iloc[0] if "Stadium" in df.columns else "Unknown"
-    home   = df["HomeTeam"].iloc[0] if "HomeTeam" in df.columns else "Unknown"
-    away   = df["AwayTeam"].iloc[0] if "AwayTeam" in df.columns else "Unknown"
-    lines.append(f"Game: {away} @ {home} | {date} | {stadium}")
+    date    = df["Date"].iloc[0]    if "Date"     in df.columns else "Unknown"
+    stadium = df["Stadium"].iloc[0] if "Stadium"  in df.columns else "Unknown"
+    home    = df["HomeTeam"].iloc[0] if "HomeTeam" in df.columns else "Unknown"
+    away    = df["AwayTeam"].iloc[0] if "AwayTeam" in df.columns else "Unknown"
+    lines.append(f"NOTE: This is post-game Trackman data. The game has already been completed.")
+    lines.append(f"Game: {away} (Away) @ {home} (Home) | {date} | {stadium}")
     lines.append(f"Total pitches tracked: {len(df)}\n")
 
-    # --- Per-pitcher summary ---
-    lines.append("=== PITCHING SUMMARY ===")
-    pitchers = df.groupby("Pitcher")
-    for pitcher, pdf in pitchers:
-        team = pdf["PitcherTeam"].iloc[0]
+    def pitcher_block(pdf, pitcher):
         throws = pdf["PitcherThrows"].iloc[0]
-        total = len(pdf)
-        lines.append(f"\n{pitcher} ({throws}H) — {team} | {total} pitches")
+        total  = len(pdf)
+        block  = [f"\n  {pitcher} ({throws}H) — {total} pitches"]
 
-        # Pitch mix
         if "TaggedPitchType" in df.columns:
-            mix = pdf["TaggedPitchType"].value_counts()
+            mix     = pdf["TaggedPitchType"].value_counts()
             mix_str = ", ".join([f"{pt}: {cnt} ({cnt/total*100:.0f}%)" for pt, cnt in mix.items()])
-            lines.append(f"  Pitch mix: {mix_str}")
+            block.append(f"    Pitch mix: {mix_str}")
 
-        # Stats per pitch type
         for pitch_type, ptdf in pdf.groupby("TaggedPitchType"):
             stats = []
-            if "RelSpeed" in df.columns:
-                avg_v = ptdf["RelSpeed"].mean()
-                stats.append(f"Velo: {avg_v:.1f} mph")
-            if "SpinRate" in df.columns:
-                avg_spin = ptdf["SpinRate"].mean()
-                stats.append(f"Spin: {avg_spin:.0f} rpm")
-            if "InducedVertBreak" in df.columns:
-                avg_ivb = ptdf["InducedVertBreak"].mean()
-                stats.append(f"IVB: {avg_ivb:.1f}\"")
-            if "HorzBreak" in df.columns:
-                avg_hb = ptdf["HorzBreak"].mean()
-                stats.append(f"HB: {avg_hb:.1f}\"")
+            if "RelSpeed"        in df.columns: stats.append(f"Velo: {ptdf['RelSpeed'].mean():.1f} mph")
+            if "SpinRate"        in df.columns: stats.append(f"Spin: {ptdf['SpinRate'].mean():.0f} rpm")
+            if "InducedVertBreak" in df.columns: stats.append(f"IVB: {ptdf['InducedVertBreak'].mean():.1f}\"")
+            if "HorzBreak"       in df.columns: stats.append(f"HB: {ptdf['HorzBreak'].mean():.1f}\"")
             if stats:
-                lines.append(f"    {pitch_type}: {' | '.join(stats)}")
+                block.append(f"      {pitch_type}: {' | '.join(stats)}")
 
-        # Strike/ball/results
         if "PitchCall" in df.columns:
-            calls = pdf["PitchCall"].value_counts()
-            strikes = calls.get("StrikeCalled", 0) + calls.get("StrikeSwinging", 0) + calls.get("FoulBall", 0) + calls.get("InPlay", 0)
-            balls = calls.get("BallCalled", 0)
-            strike_pct = strikes / total * 100 if total > 0 else 0
-            lines.append(f"  Strike%: {strike_pct:.0f}% | Strikes: {strikes} | Balls: {balls}")
+            calls  = pdf["PitchCall"].value_counts()
+            strikes = sum(calls.get(k, 0) for k in ["StrikeCalled", "StrikeSwinging", "FoulBall", "InPlay"])
+            balls   = calls.get("BallCalled", 0)
+            block.append(f"    Strike%: {strikes/total*100:.0f}% | K: {(pdf['KorBB']=='Strikeout').sum()} | BB: {(pdf['KorBB']=='Walk').sum()}")
 
-        if "KorBB" in df.columns:
-            ks  = (pdf["KorBB"] == "Strikeout").sum()
-            bbs = (pdf["KorBB"] == "Walk").sum()
-            lines.append(f"  K: {ks} | BB: {bbs}")
+        return block
 
-    # --- Per-batter summary ---
-    lines.append("\n=== BATTING SUMMARY ===")
-    batters = df.groupby("Batter")
-    for batter, bdf in batters:
-        team = bdf["BatterTeam"].iloc[0]
-        side = bdf["BatterSide"].iloc[0]
-        pa   = bdf["PAofInning"].nunique()
-        lines.append(f"\n{batter} ({side}H) — {team} | ~{pa} PA")
+    def batter_block(bdf, batter):
+        side  = bdf["BatterSide"].iloc[0]
+        block = [f"\n  {batter} ({side}H)"]
 
         if "PlayResult" in df.columns:
-            results = bdf["PlayResult"].value_counts()
+            results    = bdf["PlayResult"].value_counts()
             result_str = ", ".join([f"{r}: {c}" for r, c in results.items() if r not in ("Undefined", "")])
             if result_str:
-                lines.append(f"  Results: {result_str}")
+                block.append(f"    Results: {result_str}")
 
         if "KorBB" in df.columns:
             ks  = (bdf["KorBB"] == "Strikeout").sum()
             bbs = (bdf["KorBB"] == "Walk").sum()
             if ks or bbs:
-                lines.append(f"  K: {ks} | BB: {bbs}")
+                block.append(f"    K: {ks} | BB: {bbs}")
 
         contact = bdf[bdf["ExitSpeed"].notna() & (bdf["ExitSpeed"] > 0)] if "ExitSpeed" in df.columns else pd.DataFrame()
         if not contact.empty:
-            avg_ev = contact["ExitSpeed"].mean()
-            max_ev = contact["ExitSpeed"].max()
-            lines.append(f"  Exit Velo: avg {avg_ev:.1f} mph | max {max_ev:.1f} mph")
-        if "Angle" in df.columns and not contact.empty:
-            avg_la = contact["Angle"].mean()
-            lines.append(f"  Launch Angle: avg {avg_la:.1f} deg")
+            block.append(f"    Exit Velo: avg {contact['ExitSpeed'].mean():.1f} mph | max {contact['ExitSpeed'].max():.1f} mph")
+            if "Angle" in df.columns:
+                block.append(f"    Launch Angle: avg {contact['Angle'].mean():.1f} deg")
+
+        return block
+
+    SMC_CODE = "STM_GAE"
+    opp_code = away if home == SMC_CODE else home
+    opp_label = opp_code
+
+    # --- Saint Mary's ---
+    lines.append("=== SAINT MARY'S (STM_GAE) ===")
+    lines.append("-- Pitching --")
+    for pitcher, pdf in df[df["PitcherTeam"] == SMC_CODE].groupby("Pitcher"):
+        lines.extend(pitcher_block(pdf, pitcher))
+
+    lines.append("\n-- Batting --")
+    for batter, bdf in df[df["BatterTeam"] == SMC_CODE].groupby("Batter"):
+        lines.extend(batter_block(bdf, batter))
+
+    # --- Opponent ---
+    lines.append(f"\n=== OPPONENT ({opp_label}) ===")
+    lines.append("-- Pitching --")
+    for pitcher, pdf in df[df["PitcherTeam"] != SMC_CODE].groupby("Pitcher"):
+        lines.extend(pitcher_block(pdf, pitcher))
+
+    lines.append("\n-- Batting --")
+    for batter, bdf in df[df["BatterTeam"] != SMC_CODE].groupby("Batter"):
+        lines.extend(batter_block(bdf, batter))
 
     return "\n".join(lines)
 
@@ -399,6 +424,7 @@ def analyze_trackman(
     summary: str,
     notes_context: str = "",
     output_focus: str = "",
+    session_context: str = "",
 ) -> str:
     user_context_block = ""
     if notes_context:
@@ -406,7 +432,9 @@ def analyze_trackman(
     if output_focus:
         user_context_block += f"\nFocus on: {output_focus}"
 
-    prompt = f"""Here is a Trackman pitch-by-pitch data summary from a baseball game:{user_context_block}
+    session_block = f"\n\n{session_context}" if session_context else ""
+
+    prompt = f"""Here is a Trackman pitch-by-pitch data summary from a completed baseball game:{user_context_block}{session_block}
 
 TRACKMAN DATA SUMMARY:
 {summary}
@@ -434,12 +462,12 @@ One deeper observation — an interesting pattern, matchup, or trend in the data
 # ---------------------------------------------------------------------------
 # Shared chat renderer
 # ---------------------------------------------------------------------------
-def render_chat(client: anthropic.Anthropic, context: str, state_key: str) -> None:
-    st.markdown('<p class="fv-label">Ask the Scout</p>', unsafe_allow_html=True)
+def render_chat(client: anthropic.Anthropic, context: str, state_key: str, session_context: str = "", label: str = "Ask the Scout") -> None:
+    st.markdown(f'<p class="fv-label">{label}</p>', unsafe_allow_html=True)
     st.markdown("""
         <div class="fv-card fv-card-navy" style="margin-bottom:1.25rem; padding: 1rem 1.25rem;">
             <span style="color:rgba(255,255,255,0.6); font-size:0.85rem;">
-                The scout has full context from the analysis above. Ask anything.
+                The scout has full context from all session materials. Ask anything.
             </span>
         </div>
     """, unsafe_allow_html=True)
@@ -454,7 +482,7 @@ def render_chat(client: anthropic.Anthropic, context: str, state_key: str) -> No
             st.markdown(user_input)
         with st.chat_message("assistant"):
             with st.spinner("Thinking…"):
-                reply = chat_response(client, context, st.session_state[state_key])
+                reply = chat_response(client, context, st.session_state[state_key], session_context=session_context)
             st.markdown(reply)
         st.session_state[state_key].append({"role": "assistant", "content": reply})
 
@@ -676,21 +704,23 @@ hr { border-color: rgba(255,255,255,0.06) !important; margin: 2rem 0 !important;
 # ---------------------------------------------------------------------------
 def main():
     # Session state init
-    # NOTE: When session IDs are added, persist these slots per session_id
-    # so all uploaded content (notes + trackman) can be combined as context.
     for key, default in [
+        # Session
+        ("session_id",    str(uuid.uuid4())[:8].upper()),
+        ("session_items", []),   # {type, label, content, insights}
+        ("session_chat",  []),
         # Handwritten notes tab
-        ("notes_analyzed", False),
+        ("notes_analyzed",     False),
         ("notes_transcription", ""),
-        ("notes_insights", ""),
-        ("notes_rag_context", []),
-        ("notes_images", []),
-        ("notes_chat", []),
+        ("notes_insights",     ""),
+        ("notes_rag_context",  []),
+        ("notes_images",       []),
+        ("notes_chat",         []),
         # Trackman tab
         ("trackman_analyzed", False),
-        ("trackman_summary", ""),
+        ("trackman_summary",  ""),
         ("trackman_insights", ""),
-        ("trackman_chat", []),
+        ("trackman_chat",     []),
     ]:
         if key not in st.session_state:
             st.session_state[key] = default
@@ -711,8 +741,35 @@ def main():
 
     client = get_client()
 
+    # ── Session bar ───────────────────────────────────────────────────────────
+    col_sid, col_reset = st.columns([4, 1])
+    with col_sid:
+        n = len(st.session_state.session_items)
+        item_str = f"{n} item{'s' if n != 1 else ''} in session" if n else "No items in session yet"
+        st.markdown(f"""
+            <div class="fv-card" style="padding:0.75rem 1.25rem; display:flex; align-items:center; gap:1rem;">
+                <span style="color:rgba(200,16,46,0.9); font-size:0.7rem; font-weight:700; letter-spacing:0.15em; text-transform:uppercase;">Session</span>
+                <span style="color:white; font-size:0.9rem; font-weight:600; font-family:monospace;">{st.session_state.session_id}</span>
+                <span style="color:rgba(255,255,255,0.4); font-size:0.8rem;">{item_str}</span>
+            </div>
+        """, unsafe_allow_html=True)
+    with col_reset:
+        if st.button("New Session", use_container_width=True):
+            for key in ["session_id", "session_items", "session_chat",
+                        "notes_analyzed", "notes_transcription", "notes_insights",
+                        "notes_rag_context", "notes_images", "notes_chat",
+                        "trackman_analyzed", "trackman_summary", "trackman_insights", "trackman_chat"]:
+                del st.session_state[key]
+            st.rerun()
+
+    # Session summary
+    if st.session_state.session_items:
+        with st.expander(f"📁 Session Contents ({len(st.session_state.session_items)} items)", expanded=False):
+            for i, item in enumerate(st.session_state.session_items, 1):
+                st.markdown(f"**{i}. [{item['type'].upper()}]** {item['label']}")
+
     # ── Tabs ──────────────────────────────────────────────────────────────────
-    tab_notes, tab_trackman = st.tabs(["📋 Handwritten Notes", "📊 Trackman Data"])
+    tab_notes, tab_trackman, tab_session = st.tabs(["📋 Handwritten Notes", "📊 Trackman Data", "💬 Session Chat"])
 
     # =========================================================================
     # TAB 1 — Handwritten Notes
@@ -768,12 +825,20 @@ def main():
                 with st.spinner("Searching historical scouting database…"):
                     context = retrieve_context(combined, rag_index, rag_df)
 
+                session_ctx = build_session_context(st.session_state.session_items)
+
                 with st.spinner("Generating insights…"):
                     insights = generate_insights(
                         client, combined, context,
                         notes_context=notes_context, output_focus=notes_focus,
+                        session_context=session_ctx,
                     )
 
+                label = notes_context or f"Scouting Notes ({len(images)} page(s))"
+                st.session_state.session_items.append({
+                    "type": "notes", "label": label,
+                    "content": combined, "insights": insights,
+                })
                 st.session_state.notes_analyzed     = True
                 st.session_state.notes_transcription = combined
                 st.session_state.notes_insights      = insights
@@ -829,7 +894,8 @@ def main():
                 )
 
             st.markdown("<hr>", unsafe_allow_html=True)
-            render_chat(client, combined, "notes_chat")
+            render_chat(client, combined, "notes_chat",
+                        session_context=build_session_context(st.session_state.session_items))
 
     # =========================================================================
     # TAB 2 — Trackman Data
@@ -875,12 +941,20 @@ def main():
                     df = pd.read_csv(csv_file)
                     summary = summarize_trackman(df)
 
+                session_ctx = build_session_context(st.session_state.session_items)
+
                 with st.spinner("Generating insights…"):
                     insights = analyze_trackman(
                         client, summary,
                         notes_context=tm_context, output_focus=tm_focus,
+                        session_context=session_ctx,
                     )
 
+                label = tm_context or csv_file.name
+                st.session_state.session_items.append({
+                    "type": "trackman", "label": label,
+                    "content": summary, "insights": insights,
+                })
                 st.session_state.trackman_analyzed = True
                 st.session_state.trackman_summary  = summary
                 st.session_state.trackman_insights = insights
@@ -910,14 +984,28 @@ def main():
             )
 
             st.markdown("<hr>", unsafe_allow_html=True)
-            render_chat(client, summary, "trackman_chat")
+            render_chat(client, summary, "trackman_chat",
+                        session_context=build_session_context(st.session_state.session_items))
 
-        with st.chat_message("assistant"):
-            with st.spinner("Thinking…"):
-                reply = chat_response(client, combined_transcription, st.session_state.chat_messages)
-            st.markdown(reply)
-
-        st.session_state.chat_messages.append({"role": "assistant", "content": reply})
+    # =========================================================================
+    # TAB 3 — Session Chat
+    # =========================================================================
+    with tab_session:
+        if not st.session_state.session_items:
+            st.markdown("""
+                <div class="fv-card" style="text-align:center; padding:3rem; margin-top:1rem;">
+                    <div style="font-size:2rem; margin-bottom:0.75rem;">💬</div>
+                    <div style="color:rgba(255,255,255,0.35); font-size:0.9rem;">
+                        Analyze some notes or Trackman data first — then use this tab
+                        to ask questions across all session materials combined.
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+        else:
+            full_context = build_session_context(st.session_state.session_items)
+            render_chat(client, full_context, "session_chat",
+                        session_context="",
+                        label="Session Chat — All Materials")
 
 
 if __name__ == "__main__":
