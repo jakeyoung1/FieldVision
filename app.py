@@ -466,7 +466,7 @@ def render_chat(client: anthropic.Anthropic, context: str, state_key: str, sessi
     st.markdown(f'<p class="fv-label">{label}</p>', unsafe_allow_html=True)
     st.markdown("""
         <div class="fv-card fv-card-navy" style="margin-bottom:1.25rem; padding: 1rem 1.25rem;">
-            <span style="color:rgba(255,255,255,0.6); font-size:0.85rem;">
+            <span style="color:var(--text-muted); font-size:0.85rem;">
                 The scout has full context from all session materials. Ask anything.
             </span>
         </div>
@@ -509,8 +509,100 @@ def collect_images(uploaded_files) -> list[tuple[str, Image.Image]]:
 # ---------------------------------------------------------------------------
 # CSS
 # ---------------------------------------------------------------------------
-CUSTOM_CSS = """
-<style>
+# ---------------------------------------------------------------------------
+# Theme CSS — CSS custom-property approach so one stylesheet serves both modes
+# ---------------------------------------------------------------------------
+_DARK_VARS = """
+:root {
+    --bg:                  #080d18;
+    --surface:             rgba(255,255,255,0.03);
+    --surface-2:           rgba(255,255,255,0.05);
+    --border:              rgba(255,255,255,0.07);
+    --border-strong:       rgba(255,255,255,0.13);
+    --text:                #edf0fa;
+    --text-muted:          rgba(237,240,250,0.5);
+    --text-subtle:         rgba(237,240,250,0.28);
+    --hero-title:          #ffffff;
+    --label-color:         rgba(200,16,46,0.7);
+    --badge-bg:            rgba(200,16,46,0.08);
+    --badge-border:        rgba(200,16,46,0.2);
+    --badge-text:          rgba(220,80,95,0.95);
+    --report-bg:           rgba(8,13,24,0.55);
+    --report-text:         #d8e0f0;
+    --input-bg:            rgba(255,255,255,0.03);
+    --input-bg-focus:      rgba(255,255,255,0.05);
+    --placeholder:         rgba(237,240,250,0.2);
+    --upload-bg:           rgba(255,255,255,0.02);
+    --upload-border:       rgba(255,255,255,0.09);
+    --expander-bg:         rgba(255,255,255,0.02);
+    --expander-text:       rgba(237,240,250,0.5);
+    --chat-msg-bg:         rgba(255,255,255,0.025);
+    --chat-input-bg:       rgba(255,255,255,0.03);
+    --tab-inactive:        rgba(237,240,250,0.35);
+    --tab-hover:           rgba(237,240,250,0.65);
+    --dl-btn-text:         rgba(237,240,250,0.65);
+    --dl-btn-border:       rgba(237,240,250,0.14);
+    --dl-btn-hover-bg:     rgba(255,255,255,0.05);
+    --dl-btn-hover-border: rgba(237,240,250,0.28);
+    --dl-btn-hover-text:   #ffffff;
+    --toggle-bg:           rgba(255,255,255,0.05);
+    --toggle-border:       rgba(255,255,255,0.13);
+    --toggle-text:         rgba(237,240,250,0.7);
+    --toggle-hover-bg:     rgba(255,255,255,0.09);
+    --card-shadow:         none;
+    --divider:             rgba(255,255,255,0.06);
+    --notification-bg:     rgba(8,13,24,0.85);
+    --scrollbar:           rgba(255,255,255,0.08);
+    --scrollbar-hover:     rgba(255,255,255,0.16);
+}
+"""
+
+_LIGHT_VARS = """
+:root {
+    --bg:                  #f2f5fb;
+    --surface:             #ffffff;
+    --surface-2:           #eaeff8;
+    --border:              rgba(0,0,0,0.08);
+    --border-strong:       rgba(0,0,0,0.16);
+    --text:                #0d1520;
+    --text-muted:          rgba(13,21,32,0.58);
+    --text-subtle:         rgba(13,21,32,0.38);
+    --hero-title:          #002147;
+    --label-color:         #b30d27;
+    --badge-bg:            rgba(200,16,46,0.07);
+    --badge-border:        rgba(200,16,46,0.22);
+    --badge-text:          #9b0c23;
+    --report-bg:           #ffffff;
+    --report-text:         #0d1520;
+    --input-bg:            #ffffff;
+    --input-bg-focus:      #fafbff;
+    --placeholder:         rgba(13,21,32,0.28);
+    --upload-bg:           #f8f9fc;
+    --upload-border:       rgba(0,0,0,0.13);
+    --expander-bg:         #ffffff;
+    --expander-text:       rgba(13,21,32,0.58);
+    --chat-msg-bg:         #f6f8fd;
+    --chat-input-bg:       #ffffff;
+    --tab-inactive:        rgba(13,21,32,0.4);
+    --tab-hover:           rgba(13,21,32,0.72);
+    --dl-btn-text:         rgba(13,21,32,0.65);
+    --dl-btn-border:       rgba(13,21,32,0.16);
+    --dl-btn-hover-bg:     rgba(13,21,32,0.04);
+    --dl-btn-hover-border: rgba(13,21,32,0.28);
+    --dl-btn-hover-text:   #0d1520;
+    --toggle-bg:           #ffffff;
+    --toggle-border:       rgba(0,0,0,0.16);
+    --toggle-text:         rgba(13,21,32,0.65);
+    --toggle-hover-bg:     #f0f3fa;
+    --card-shadow:         0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+    --divider:             rgba(0,0,0,0.07);
+    --notification-bg:     #ffffff;
+    --scrollbar:           rgba(0,0,0,0.1);
+    --scrollbar-hover:     rgba(0,0,0,0.2);
+}
+"""
+
+_BASE_CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 /* Saint Mary's — Navy #002147 | Red #C8102E | White #FFFFFF */
@@ -522,13 +614,18 @@ footer    { visibility: hidden; }
 header    { visibility: hidden; }
 
 /* ── Background ─────────────────────────────────────────────────────────── */
-.stApp { background-color: #080d18; }
+.stApp { background-color: var(--bg); }
+
+/* ── Utility text helpers (used in inline HTML snippets) ─────────────────── */
+.fv-text        { color: var(--text)        !important; }
+.fv-text-muted  { color: var(--text-muted)  !important; }
+.fv-text-subtle { color: var(--text-subtle) !important; }
 
 /* ── Hero ───────────────────────────────────────────────────────────────── */
 .fv-hero {
     text-align: center;
     padding: 2.75rem 1rem 2rem;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    border-bottom: 1px solid var(--divider);
     margin-bottom: 2rem;
 }
 .fv-logo {
@@ -539,8 +636,7 @@ header    { visibility: hidden; }
     margin-bottom: 0.55rem;
 }
 .fv-logo-mark {
-    width: 38px;
-    height: 38px;
+    width: 38px; height: 38px;
     background: #C8102E;
     border-radius: 8px;
     display: inline-flex;
@@ -556,12 +652,12 @@ header    { visibility: hidden; }
     font-size: 2.2rem;
     font-weight: 700;
     letter-spacing: -0.025em;
-    color: #ffffff;
+    color: var(--hero-title);
     margin: 0;
     line-height: 1;
 }
 .fv-hero p {
-    color: rgba(255,255,255,0.28);
+    color: var(--text-subtle);
     font-size: 0.72rem;
     font-weight: 500;
     letter-spacing: 0.22em;
@@ -575,46 +671,48 @@ header    { visibility: hidden; }
     font-weight: 600;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: rgba(200,16,46,0.6);
+    color: var(--label-color);
     margin: 2rem 0 0.6rem;
 }
 
 /* ── Cards ───────────────────────────────────────────────────────────────── */
 .fv-card {
-    background: rgba(255,255,255,0.025);
-    border: 1px solid rgba(255,255,255,0.06);
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 10px;
     padding: 1.25rem;
     margin-bottom: 0.75rem;
+    box-shadow: var(--card-shadow);
 }
 .fv-card-red {
-    background: rgba(200,16,46,0.04);
-    border-color: rgba(200,16,46,0.14);
+    background: var(--badge-bg);
+    border-color: var(--badge-border);
 }
 .fv-card-navy {
-    background: rgba(0,33,71,0.3);
-    border-color: rgba(255,255,255,0.06);
+    background: var(--surface-2);
+    border-color: var(--border);
 }
 
 /* ── Report output ───────────────────────────────────────────────────────── */
 .fv-report {
-    background: rgba(8,13,24,0.6);
-    border: 1px solid rgba(255,255,255,0.06);
+    background: var(--report-bg);
+    border: 1px solid var(--border);
     border-left: 2px solid #C8102E;
     border-radius: 0 10px 10px 0;
     padding: 1.75rem 2rem;
     margin: 0.5rem 0 1.5rem;
     line-height: 1.8;
-    color: #d8e0f0;
+    color: var(--report-text);
     font-size: 0.92rem;
+    box-shadow: var(--card-shadow);
 }
 
 /* ── Badge ───────────────────────────────────────────────────────────────── */
 .fv-badge {
     display: inline-block;
-    background: rgba(200,16,46,0.07);
-    border: 1px solid rgba(200,16,46,0.18);
-    color: rgba(210,80,95,0.9);
+    background: var(--badge-bg);
+    border: 1px solid var(--badge-border);
+    color: var(--badge-text);
     font-size: 0.65rem;
     font-weight: 600;
     letter-spacing: 0.1em;
@@ -627,7 +725,7 @@ header    { visibility: hidden; }
 /* ── Tabs ────────────────────────────────────────────────────────────────── */
 .stTabs [data-baseweb="tab-list"] {
     background: transparent !important;
-    border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+    border-bottom: 1px solid var(--border) !important;
     gap: 0 !important;
     padding: 0 !important;
 }
@@ -636,7 +734,7 @@ header    { visibility: hidden; }
     border: none !important;
     border-bottom: 2px solid transparent !important;
     border-radius: 0 !important;
-    color: rgba(255,255,255,0.35) !important;
+    color: var(--tab-inactive) !important;
     font-size: 0.82rem !important;
     font-weight: 500 !important;
     padding: 0.7rem 1.2rem !important;
@@ -644,19 +742,17 @@ header    { visibility: hidden; }
     transition: color 0.15s ease, border-color 0.15s ease !important;
 }
 .stTabs [aria-selected="true"] {
-    color: #ffffff !important;
+    color: var(--text) !important;
     border-bottom-color: #C8102E !important;
     background: transparent !important;
 }
 .stTabs [data-baseweb="tab"]:hover {
-    color: rgba(255,255,255,0.65) !important;
-    background: rgba(255,255,255,0.02) !important;
+    color: var(--tab-hover) !important;
+    background: var(--surface-2) !important;
 }
-.stTabs [data-baseweb="tab-panel"] {
-    padding-top: 1.5rem !important;
-}
+.stTabs [data-baseweb="tab-panel"] { padding-top: 1.5rem !important; }
 
-/* ── Primary buttons ─────────────────────────────────────────────────────── */
+/* ── Primary CTA buttons (red, high contrast in both modes) ──────────────── */
 .stButton > button {
     background: #C8102E !important;
     color: #ffffff !important;
@@ -666,115 +762,130 @@ header    { visibility: hidden; }
     font-size: 0.85rem !important;
     letter-spacing: 0.015em !important;
     padding: 0.6rem 1.3rem !important;
-    box-shadow: 0 2px 8px rgba(200,16,46,0.22) !important;
+    box-shadow: 0 2px 8px rgba(200,16,46,0.3) !important;
     transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease !important;
 }
 .stButton > button:hover {
     background: #a80d26 !important;
-    box-shadow: 0 4px 14px rgba(200,16,46,0.35) !important;
+    box-shadow: 0 4px 14px rgba(200,16,46,0.4) !important;
     transform: translateY(-1px) !important;
 }
 .stButton > button:active { transform: translateY(0) !important; }
 
+/* ── Theme toggle — neutral secondary style ──────────────────────────────── */
+.fv-toggle-btn .stButton > button {
+    background: var(--toggle-bg) !important;
+    color: var(--toggle-text) !important;
+    border: 1px solid var(--toggle-border) !important;
+    box-shadow: none !important;
+    font-size: 1rem !important;
+    padding: 0.4rem 0.6rem !important;
+}
+.fv-toggle-btn .stButton > button:hover {
+    background: var(--toggle-hover-bg) !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
 /* ── Download buttons ────────────────────────────────────────────────────── */
 .stDownloadButton > button {
     background: transparent !important;
-    color: rgba(255,255,255,0.6) !important;
-    border: 1px solid rgba(255,255,255,0.11) !important;
+    color: var(--dl-btn-text) !important;
+    border: 1px solid var(--dl-btn-border) !important;
     border-radius: 8px !important;
     font-weight: 500 !important;
     font-size: 0.82rem !important;
     transition: all 0.15s ease !important;
 }
 .stDownloadButton > button:hover {
-    background: rgba(255,255,255,0.04) !important;
-    border-color: rgba(255,255,255,0.22) !important;
-    color: #ffffff !important;
+    background: var(--dl-btn-hover-bg) !important;
+    border-color: var(--dl-btn-hover-border) !important;
+    color: var(--dl-btn-hover-text) !important;
 }
 
 /* ── Inputs ──────────────────────────────────────────────────────────────── */
 .stTextInput > div > div > input,
 .stTextArea > div > div > textarea {
-    background: rgba(255,255,255,0.03) !important;
-    border: 1px solid rgba(255,255,255,0.08) !important;
+    background: var(--input-bg) !important;
+    border: 1px solid var(--border-strong) !important;
     border-radius: 8px !important;
-    color: #ffffff !important;
+    color: var(--text) !important;
     font-family: 'Inter', sans-serif !important;
     font-size: 0.88rem !important;
     transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
 }
 .stTextInput > div > div > input:focus,
 .stTextArea > div > div > textarea:focus {
-    border-color: rgba(200,16,46,0.35) !important;
-    box-shadow: 0 0 0 3px rgba(200,16,46,0.07) !important;
-    background: rgba(255,255,255,0.04) !important;
+    border-color: rgba(200,16,46,0.45) !important;
+    box-shadow: 0 0 0 3px rgba(200,16,46,0.09) !important;
+    background: var(--input-bg-focus) !important;
 }
 .stTextInput > div > div > input::placeholder,
 .stTextArea > div > div > textarea::placeholder {
-    color: rgba(255,255,255,0.18) !important;
+    color: var(--placeholder) !important;
 }
 label {
-    color: rgba(255,255,255,0.4) !important;
+    color: var(--text-muted) !important;
     font-size: 0.78rem !important;
     font-weight: 500 !important;
 }
 
 /* ── File uploader ───────────────────────────────────────────────────────── */
 [data-testid="stFileUploaderDropzone"] {
-    background: rgba(255,255,255,0.02) !important;
-    border: 1px dashed rgba(255,255,255,0.09) !important;
+    background: var(--upload-bg) !important;
+    border: 1px dashed var(--upload-border) !important;
     border-radius: 10px !important;
     transition: border-color 0.15s ease, background 0.15s ease !important;
 }
 [data-testid="stFileUploaderDropzone"]:hover {
-    border-color: rgba(200,16,46,0.3) !important;
-    background: rgba(200,16,46,0.02) !important;
+    border-color: rgba(200,16,46,0.4) !important;
+    background: var(--badge-bg) !important;
 }
 
 /* ── Expander ────────────────────────────────────────────────────────────── */
 [data-testid="stExpander"] {
-    background: rgba(255,255,255,0.02) !important;
-    border: 1px solid rgba(255,255,255,0.06) !important;
+    background: var(--expander-bg) !important;
+    border: 1px solid var(--border) !important;
     border-radius: 8px !important;
 }
 [data-testid="stExpander"] summary {
     font-size: 0.83rem !important;
-    color: rgba(255,255,255,0.5) !important;
+    color: var(--expander-text) !important;
     font-weight: 500 !important;
 }
 
 /* ── Chat ────────────────────────────────────────────────────────────────── */
 [data-testid="stChatInput"] > div {
-    background: rgba(255,255,255,0.03) !important;
-    border: 1px solid rgba(255,255,255,0.08) !important;
+    background: var(--chat-input-bg) !important;
+    border: 1px solid var(--border-strong) !important;
     border-radius: 10px !important;
 }
 [data-testid="stChatMessage"] {
-    background: rgba(255,255,255,0.02) !important;
-    border: 1px solid rgba(255,255,255,0.05) !important;
+    background: var(--chat-msg-bg) !important;
+    border: 1px solid var(--border) !important;
     border-radius: 10px !important;
 }
 
 /* ── Divider ─────────────────────────────────────────────────────────────── */
-hr {
-    border: none !important;
-    border-top: 1px solid rgba(255,255,255,0.05) !important;
-    margin: 1.75rem 0 !important;
-}
+hr { border: none !important; border-top: 1px solid var(--divider) !important; margin: 1.75rem 0 !important; }
 
 /* ── Notifications ───────────────────────────────────────────────────────── */
 [data-testid="stNotification"] {
-    background: rgba(8,13,24,0.8) !important;
+    background: var(--notification-bg) !important;
     border-radius: 8px !important;
 }
 
 /* ── Scrollbar ───────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
-</style>
+::-webkit-scrollbar-thumb { background: var(--scrollbar); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-hover); }
 """
+
+
+def get_css(theme: str = "dark") -> str:
+    vars_block = _DARK_VARS if theme == "dark" else _LIGHT_VARS
+    return f"<style>\n{vars_block}\n{_BASE_CSS}\n</style>"
 
 
 # ---------------------------------------------------------------------------
@@ -799,11 +910,13 @@ def main():
         ("trackman_summary",  ""),
         ("trackman_insights", ""),
         ("trackman_chat",     []),
+        # Theme
+        ("theme", "dark"),
     ]:
         if key not in st.session_state:
             st.session_state[key] = default
 
-    st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
+    st.markdown(get_css(st.session_state.theme), unsafe_allow_html=True)
 
     # Hero
     st.markdown("""
@@ -822,17 +935,22 @@ def main():
     client = get_client()
 
     # ── Session bar ───────────────────────────────────────────────────────────
-    col_sid, col_reset = st.columns([4, 1])
+    col_sid, col_theme, col_reset = st.columns([4, 0.65, 1.1])
     with col_sid:
         n = len(st.session_state.session_items)
         item_str = f"{n} item{'s' if n != 1 else ''} in session" if n else "No items in session yet"
         st.markdown(f"""
             <div class="fv-card" style="padding:0.75rem 1.25rem; display:flex; align-items:center; gap:1rem;">
-                <span style="color:rgba(200,16,46,0.9); font-size:0.7rem; font-weight:700; letter-spacing:0.15em; text-transform:uppercase;">Session</span>
-                <span style="color:white; font-size:0.9rem; font-weight:600; font-family:monospace;">{st.session_state.session_id}</span>
-                <span style="color:rgba(255,255,255,0.4); font-size:0.8rem;">{item_str}</span>
+                <span style="color:#C8102E; font-size:0.7rem; font-weight:700; letter-spacing:0.15em; text-transform:uppercase;">Session</span>
+                <span style="color:var(--text); font-size:0.9rem; font-weight:600; font-family:monospace;">{st.session_state.session_id}</span>
+                <span style="color:var(--text-subtle); font-size:0.8rem;">{item_str}</span>
             </div>
         """, unsafe_allow_html=True)
+    with col_theme:
+        icon = "☀️" if st.session_state.theme == "dark" else "🌙"
+        if st.button(icon, use_container_width=True, help="Switch to light mode" if st.session_state.theme == "dark" else "Switch to dark mode", key="theme_toggle"):
+            st.session_state.theme = "light" if st.session_state.theme == "dark" else "dark"
+            st.rerun()
     with col_reset:
         if st.button("New Session", use_container_width=True):
             for key in ["session_id", "session_items", "session_chat",
@@ -883,7 +1001,7 @@ def main():
             st.markdown("""
                 <div class="fv-card" style="text-align:center; padding:3rem; margin-top:1rem;">
                     <div style="font-size:2rem; margin-bottom:0.75rem;">📋</div>
-                    <div style="color:rgba(255,255,255,0.35); font-size:0.9rem;">
+                    <div style="color:var(--text-subtle); font-size:0.9rem;">
                         Upload scouting note images or PDFs above to get started
                     </div>
                 </div>
@@ -1008,7 +1126,7 @@ def main():
             st.markdown("""
                 <div class="fv-card" style="text-align:center; padding:3rem; margin-top:1rem;">
                     <div style="font-size:2rem; margin-bottom:0.75rem;">📊</div>
-                    <div style="color:rgba(255,255,255,0.35); font-size:0.9rem;">
+                    <div style="color:var(--text-subtle); font-size:0.9rem;">
                         Upload a Trackman CSV export above to get started
                     </div>
                 </div>
@@ -1075,7 +1193,7 @@ def main():
             st.markdown("""
                 <div class="fv-card" style="text-align:center; padding:3rem; margin-top:1rem;">
                     <div style="font-size:2rem; margin-bottom:0.75rem;">💬</div>
-                    <div style="color:rgba(255,255,255,0.35); font-size:0.9rem;">
+                    <div style="color:var(--text-subtle); font-size:0.9rem;">
                         Analyze some notes or Trackman data first — then use this tab
                         to ask questions across all session materials combined.
                     </div>
