@@ -30,7 +30,7 @@ st.set_page_config(
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-CLAUDE_MODEL    = "claude-haiku-4-5"
+CLAUDE_MODEL    = "claude-sonnet-4-5"
 EMBED_MODEL     = "all-MiniLM-L6-v2"   # local — no API quota
 CSV_PATH        = "data/branch-rickey-scouting.csv"
 EMBEDDINGS_PATH = "data/embeddings.npy"
@@ -513,188 +513,266 @@ CUSTOM_CSS = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-/* Saint Mary's College of California — Navy #002147 | Red #C8102E | White #FFFFFF */
+/* Saint Mary's — Navy #002147 | Red #C8102E | White #FFFFFF */
 
-html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
+html, body, [class*="css"] { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
 
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
-header {visibility: hidden;}
+#MainMenu { visibility: hidden; }
+footer    { visibility: hidden; }
+header    { visibility: hidden; }
 
-.stApp {
-    background: radial-gradient(ellipse at top left, #001530 0%, #002147 40%, #00101f 100%);
-}
+/* ── Background ─────────────────────────────────────────────────────────── */
+.stApp { background-color: #080d18; }
 
-/* Hero */
+/* ── Hero ───────────────────────────────────────────────────────────────── */
 .fv-hero {
     text-align: center;
-    padding: 3.5rem 1rem 2.5rem;
-    background: radial-gradient(ellipse at center, rgba(200,16,46,0.1) 0%, transparent 70%);
-    border-bottom: 1px solid rgba(200,16,46,0.2);
-    margin-bottom: 2.5rem;
+    padding: 2.75rem 1rem 2rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    margin-bottom: 2rem;
 }
-.fv-hero-ball { font-size: 3.5rem; line-height: 1; margin-bottom: 1rem; }
-.fv-hero h1 {
-    font-size: 3.8rem;
+.fv-logo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
+    margin-bottom: 0.55rem;
+}
+.fv-logo-mark {
+    width: 38px;
+    height: 38px;
+    background: #C8102E;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
     font-weight: 800;
-    letter-spacing: -0.03em;
-    background: linear-gradient(135deg, #ffffff 30%, #C8102E 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin: 0 0 0.5rem;
+    color: #ffffff;
+    letter-spacing: -0.02em;
+    flex-shrink: 0;
+}
+.fv-hero h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    color: #ffffff;
+    margin: 0;
+    line-height: 1;
 }
 .fv-hero p {
-    color: rgba(255,255,255,0.45);
-    font-size: 0.85rem;
-    font-weight: 600;
-    letter-spacing: 0.25em;
+    color: rgba(255,255,255,0.28);
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.22em;
     text-transform: uppercase;
-    margin: 0;
+    margin: 0.6rem 0 0;
 }
 
-/* Section labels */
+/* ── Section labels ─────────────────────────────────────────────────────── */
 .fv-label {
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.2em;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: rgba(200,16,46,0.8);
-    margin: 2rem 0 0.75rem;
+    color: rgba(200,16,46,0.6);
+    margin: 2rem 0 0.6rem;
 }
 
-/* Cards */
+/* ── Cards ───────────────────────────────────────────────────────────────── */
 .fv-card {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 14px;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
+    background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-bottom: 0.75rem;
 }
 .fv-card-red {
-    background: rgba(200,16,46,0.05);
-    border-color: rgba(200,16,46,0.2);
+    background: rgba(200,16,46,0.04);
+    border-color: rgba(200,16,46,0.14);
 }
 .fv-card-navy {
-    background: rgba(0,33,71,0.4);
-    border-color: rgba(255,255,255,0.1);
+    background: rgba(0,33,71,0.3);
+    border-color: rgba(255,255,255,0.06);
 }
 
-/* Report output */
+/* ── Report output ───────────────────────────────────────────────────────── */
 .fv-report {
-    background: rgba(0,21,48,0.5);
-    border: 1px solid rgba(200,16,46,0.2);
-    border-left: 3px solid #C8102E;
-    border-radius: 0 14px 14px 0;
-    padding: 2rem 2rem 1.5rem;
+    background: rgba(8,13,24,0.6);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-left: 2px solid #C8102E;
+    border-radius: 0 10px 10px 0;
+    padding: 1.75rem 2rem;
     margin: 0.5rem 0 1.5rem;
-    line-height: 1.75;
-    color: #f0f4ff;
+    line-height: 1.8;
+    color: #d8e0f0;
+    font-size: 0.92rem;
 }
 
-/* Status badge */
+/* ── Badge ───────────────────────────────────────────────────────────────── */
 .fv-badge {
     display: inline-block;
-    background: rgba(200,16,46,0.12);
-    border: 1px solid rgba(200,16,46,0.35);
-    color: #ff4d6d;
-    font-size: 0.7rem;
-    font-weight: 700;
+    background: rgba(200,16,46,0.07);
+    border: 1px solid rgba(200,16,46,0.18);
+    color: rgba(210,80,95,0.9);
+    font-size: 0.65rem;
+    font-weight: 600;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
-    margin-bottom: 1rem;
+    padding: 0.28rem 0.65rem;
+    border-radius: 4px;
+    margin-bottom: 0.75rem;
 }
 
-/* Buttons */
+/* ── Tabs ────────────────────────────────────────────────────────────────── */
+.stTabs [data-baseweb="tab-list"] {
+    background: transparent !important;
+    border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+    gap: 0 !important;
+    padding: 0 !important;
+}
+.stTabs [data-baseweb="tab"] {
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 2px solid transparent !important;
+    border-radius: 0 !important;
+    color: rgba(255,255,255,0.35) !important;
+    font-size: 0.82rem !important;
+    font-weight: 500 !important;
+    padding: 0.7rem 1.2rem !important;
+    margin-bottom: -1px !important;
+    transition: color 0.15s ease, border-color 0.15s ease !important;
+}
+.stTabs [aria-selected="true"] {
+    color: #ffffff !important;
+    border-bottom-color: #C8102E !important;
+    background: transparent !important;
+}
+.stTabs [data-baseweb="tab"]:hover {
+    color: rgba(255,255,255,0.65) !important;
+    background: rgba(255,255,255,0.02) !important;
+}
+.stTabs [data-baseweb="tab-panel"] {
+    padding-top: 1.5rem !important;
+}
+
+/* ── Primary buttons ─────────────────────────────────────────────────────── */
 .stButton > button {
-    background: linear-gradient(135deg, #C8102E 0%, #9b0c23 100%) !important;
+    background: #C8102E !important;
     color: #ffffff !important;
-    border: 1px solid rgba(200,16,46,0.5) !important;
-    border-radius: 10px !important;
-    font-weight: 600 !important;
-    font-size: 0.9rem !important;
-    letter-spacing: 0.04em !important;
-    padding: 0.65rem 1.5rem !important;
-    box-shadow: 0 4px 20px rgba(200,16,46,0.3) !important;
-    transition: all 0.2s ease !important;
-}
-.stButton > button:hover {
-    box-shadow: 0 6px 25px rgba(200,16,46,0.5) !important;
-    transform: translateY(-1px) !important;
-}
-
-/* Download buttons */
-.stDownloadButton > button {
-    background: rgba(255,255,255,0.05) !important;
-    color: #ffffff !important;
-    border: 1px solid rgba(255,255,255,0.2) !important;
-    border-radius: 10px !important;
+    border: none !important;
+    border-radius: 8px !important;
     font-weight: 600 !important;
     font-size: 0.85rem !important;
-    transition: all 0.2s ease !important;
+    letter-spacing: 0.015em !important;
+    padding: 0.6rem 1.3rem !important;
+    box-shadow: 0 2px 8px rgba(200,16,46,0.22) !important;
+    transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease !important;
+}
+.stButton > button:hover {
+    background: #a80d26 !important;
+    box-shadow: 0 4px 14px rgba(200,16,46,0.35) !important;
+    transform: translateY(-1px) !important;
+}
+.stButton > button:active { transform: translateY(0) !important; }
+
+/* ── Download buttons ────────────────────────────────────────────────────── */
+.stDownloadButton > button {
+    background: transparent !important;
+    color: rgba(255,255,255,0.6) !important;
+    border: 1px solid rgba(255,255,255,0.11) !important;
+    border-radius: 8px !important;
+    font-weight: 500 !important;
+    font-size: 0.82rem !important;
+    transition: all 0.15s ease !important;
 }
 .stDownloadButton > button:hover {
-    background: rgba(255,255,255,0.1) !important;
-    border-color: rgba(255,255,255,0.35) !important;
-    box-shadow: 0 4px 15px rgba(255,255,255,0.08) !important;
+    background: rgba(255,255,255,0.04) !important;
+    border-color: rgba(255,255,255,0.22) !important;
+    color: #ffffff !important;
 }
 
-/* Inputs */
+/* ── Inputs ──────────────────────────────────────────────────────────────── */
 .stTextInput > div > div > input,
 .stTextArea > div > div > textarea {
-    background: rgba(0,21,48,0.6) !important;
-    border: 1px solid rgba(255,255,255,0.1) !important;
-    border-radius: 10px !important;
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    border-radius: 8px !important;
     color: #ffffff !important;
     font-family: 'Inter', sans-serif !important;
+    font-size: 0.88rem !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
 }
 .stTextInput > div > div > input:focus,
 .stTextArea > div > div > textarea:focus {
-    border-color: rgba(200,16,46,0.5) !important;
-    box-shadow: 0 0 0 3px rgba(200,16,46,0.1) !important;
+    border-color: rgba(200,16,46,0.35) !important;
+    box-shadow: 0 0 0 3px rgba(200,16,46,0.07) !important;
+    background: rgba(255,255,255,0.04) !important;
 }
-label { color: rgba(255,255,255,0.6) !important; font-size: 0.85rem !important; }
+.stTextInput > div > div > input::placeholder,
+.stTextArea > div > div > textarea::placeholder {
+    color: rgba(255,255,255,0.18) !important;
+}
+label {
+    color: rgba(255,255,255,0.4) !important;
+    font-size: 0.78rem !important;
+    font-weight: 500 !important;
+}
 
-/* File uploader */
+/* ── File uploader ───────────────────────────────────────────────────────── */
 [data-testid="stFileUploaderDropzone"] {
-    background: rgba(0,21,48,0.4) !important;
-    border: 2px dashed rgba(200,16,46,0.3) !important;
-    border-radius: 14px !important;
-    transition: border-color 0.2s !important;
+    background: rgba(255,255,255,0.02) !important;
+    border: 1px dashed rgba(255,255,255,0.09) !important;
+    border-radius: 10px !important;
+    transition: border-color 0.15s ease, background 0.15s ease !important;
 }
 [data-testid="stFileUploaderDropzone"]:hover {
-    border-color: rgba(200,16,46,0.6) !important;
+    border-color: rgba(200,16,46,0.3) !important;
+    background: rgba(200,16,46,0.02) !important;
 }
 
-/* Expander */
+/* ── Expander ────────────────────────────────────────────────────────────── */
 [data-testid="stExpander"] {
-    background: rgba(0,21,48,0.3) !important;
-    border: 1px solid rgba(255,255,255,0.07) !important;
-    border-radius: 12px !important;
-}
-
-/* Chat */
-[data-testid="stChatInput"] > div {
-    background: rgba(0,21,48,0.6) !important;
-    border: 1px solid rgba(255,255,255,0.1) !important;
-    border-radius: 14px !important;
-}
-[data-testid="stChatMessage"] {
-    background: rgba(0,21,48,0.4) !important;
+    background: rgba(255,255,255,0.02) !important;
     border: 1px solid rgba(255,255,255,0.06) !important;
-    border-radius: 14px !important;
+    border-radius: 8px !important;
+}
+[data-testid="stExpander"] summary {
+    font-size: 0.83rem !important;
+    color: rgba(255,255,255,0.5) !important;
+    font-weight: 500 !important;
 }
 
-/* Divider */
-hr { border-color: rgba(255,255,255,0.06) !important; margin: 2rem 0 !important; }
-
-/* Info / warning boxes */
-[data-testid="stNotification"] {
-    background: rgba(0,21,48,0.5) !important;
+/* ── Chat ────────────────────────────────────────────────────────────────── */
+[data-testid="stChatInput"] > div {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
     border-radius: 10px !important;
 }
+[data-testid="stChatMessage"] {
+    background: rgba(255,255,255,0.02) !important;
+    border: 1px solid rgba(255,255,255,0.05) !important;
+    border-radius: 10px !important;
+}
+
+/* ── Divider ─────────────────────────────────────────────────────────────── */
+hr {
+    border: none !important;
+    border-top: 1px solid rgba(255,255,255,0.05) !important;
+    margin: 1.75rem 0 !important;
+}
+
+/* ── Notifications ───────────────────────────────────────────────────────── */
+[data-testid="stNotification"] {
+    background: rgba(8,13,24,0.8) !important;
+    border-radius: 8px !important;
+}
+
+/* ── Scrollbar ───────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
 </style>
 """
 
@@ -730,9 +808,11 @@ def main():
     # Hero
     st.markdown("""
         <div class="fv-hero">
-            <div class="fv-hero-ball">⚾</div>
-            <h1>FieldVision</h1>
-            <p>Baseball Scouting Intelligence</p>
+            <div class="fv-logo">
+                <div class="fv-logo-mark">FV</div>
+                <h1>FieldVision</h1>
+            </div>
+            <p>Baseball Scouting Intelligence &nbsp;·&nbsp; Saint Mary's College</p>
         </div>
     """, unsafe_allow_html=True)
 
