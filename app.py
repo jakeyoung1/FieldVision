@@ -515,90 +515,90 @@ def collect_images(uploaded_files) -> list[tuple[str, Image.Image]]:
 _DARK_VARS = """
 :root {
     --bg:                  #080d18;
-    --surface:             rgba(255,255,255,0.03);
-    --surface-2:           rgba(255,255,255,0.05);
-    --border:              rgba(255,255,255,0.07);
-    --border-strong:       rgba(255,255,255,0.13);
-    --text:                #edf0fa;
-    --text-muted:          rgba(237,240,250,0.5);
-    --text-subtle:         rgba(237,240,250,0.28);
+    --surface:             #0f1624;
+    --surface-2:           #172033;
+    --border:              rgba(255,255,255,0.09);
+    --border-strong:       rgba(255,255,255,0.18);
+    --text:                #f0f4ff;
+    --text-muted:          rgba(240,244,255,0.65);
+    --text-subtle:         rgba(240,244,255,0.42);
     --hero-title:          #ffffff;
-    --label-color:         rgba(200,16,46,0.7);
-    --badge-bg:            rgba(200,16,46,0.08);
-    --badge-border:        rgba(200,16,46,0.2);
-    --badge-text:          rgba(220,80,95,0.95);
-    --report-bg:           rgba(8,13,24,0.55);
-    --report-text:         #d8e0f0;
-    --input-bg:            rgba(255,255,255,0.03);
-    --input-bg-focus:      rgba(255,255,255,0.05);
-    --placeholder:         rgba(237,240,250,0.2);
-    --upload-bg:           rgba(255,255,255,0.02);
-    --upload-border:       rgba(255,255,255,0.09);
-    --expander-bg:         rgba(255,255,255,0.02);
-    --expander-text:       rgba(237,240,250,0.5);
-    --chat-msg-bg:         rgba(255,255,255,0.025);
-    --chat-input-bg:       rgba(255,255,255,0.03);
-    --tab-inactive:        rgba(237,240,250,0.35);
-    --tab-hover:           rgba(237,240,250,0.65);
-    --dl-btn-text:         rgba(237,240,250,0.65);
-    --dl-btn-border:       rgba(237,240,250,0.14);
-    --dl-btn-hover-bg:     rgba(255,255,255,0.05);
-    --dl-btn-hover-border: rgba(237,240,250,0.28);
+    --label-color:         #e8485f;
+    --badge-bg:            rgba(200,16,46,0.12);
+    --badge-border:        rgba(200,16,46,0.28);
+    --badge-text:          #f07080;
+    --report-bg:           #0d1526;
+    --report-text:         #e4eaff;
+    --input-bg:            #111826;
+    --input-bg-focus:      #16203a;
+    --placeholder:         rgba(240,244,255,0.28);
+    --upload-bg:           #0d1526;
+    --upload-border:       rgba(255,255,255,0.14);
+    --expander-bg:         #0f1624;
+    --expander-text:       rgba(240,244,255,0.6);
+    --chat-msg-bg:         #0f1624;
+    --chat-input-bg:       #111826;
+    --tab-inactive:        rgba(240,244,255,0.42);
+    --tab-hover:           rgba(240,244,255,0.72);
+    --dl-btn-text:         rgba(240,244,255,0.7);
+    --dl-btn-border:       rgba(240,244,255,0.2);
+    --dl-btn-hover-bg:     rgba(255,255,255,0.07);
+    --dl-btn-hover-border: rgba(240,244,255,0.35);
     --dl-btn-hover-text:   #ffffff;
-    --toggle-bg:           rgba(255,255,255,0.05);
-    --toggle-border:       rgba(255,255,255,0.13);
-    --toggle-text:         rgba(237,240,250,0.7);
-    --toggle-hover-bg:     rgba(255,255,255,0.09);
+    --toggle-bg:           #172033;
+    --toggle-border:       rgba(255,255,255,0.18);
+    --toggle-text:         rgba(240,244,255,0.75);
+    --toggle-hover-bg:     #1e2d47;
     --card-shadow:         none;
-    --divider:             rgba(255,255,255,0.06);
-    --notification-bg:     rgba(8,13,24,0.85);
-    --scrollbar:           rgba(255,255,255,0.08);
-    --scrollbar-hover:     rgba(255,255,255,0.16);
+    --divider:             rgba(255,255,255,0.07);
+    --notification-bg:     #0f1624;
+    --scrollbar:           rgba(255,255,255,0.1);
+    --scrollbar-hover:     rgba(255,255,255,0.2);
 }
 """
 
 _LIGHT_VARS = """
 :root {
-    --bg:                  #f2f5fb;
+    --bg:                  #f0f4fa;
     --surface:             #ffffff;
-    --surface-2:           #eaeff8;
-    --border:              rgba(0,0,0,0.08);
-    --border-strong:       rgba(0,0,0,0.16);
-    --text:                #0d1520;
-    --text-muted:          rgba(13,21,32,0.58);
-    --text-subtle:         rgba(13,21,32,0.38);
+    --surface-2:           #e8edf6;
+    --border:              rgba(0,0,0,0.1);
+    --border-strong:       rgba(0,0,0,0.2);
+    --text:                #08111e;
+    --text-muted:          rgba(8,17,30,0.65);
+    --text-subtle:         rgba(8,17,30,0.45);
     --hero-title:          #002147;
-    --label-color:         #b30d27;
-    --badge-bg:            rgba(200,16,46,0.07);
-    --badge-border:        rgba(200,16,46,0.22);
-    --badge-text:          #9b0c23;
+    --label-color:         #a80d24;
+    --badge-bg:            rgba(200,16,46,0.08);
+    --badge-border:        rgba(200,16,46,0.25);
+    --badge-text:          #8b0b1e;
     --report-bg:           #ffffff;
-    --report-text:         #0d1520;
+    --report-text:         #08111e;
     --input-bg:            #ffffff;
-    --input-bg-focus:      #fafbff;
-    --placeholder:         rgba(13,21,32,0.28);
-    --upload-bg:           #f8f9fc;
-    --upload-border:       rgba(0,0,0,0.13);
+    --input-bg-focus:      #f8f9ff;
+    --placeholder:         rgba(8,17,30,0.32);
+    --upload-bg:           #f5f8fd;
+    --upload-border:       rgba(0,0,0,0.15);
     --expander-bg:         #ffffff;
-    --expander-text:       rgba(13,21,32,0.58);
-    --chat-msg-bg:         #f6f8fd;
+    --expander-text:       rgba(8,17,30,0.62);
+    --chat-msg-bg:         #f5f8fd;
     --chat-input-bg:       #ffffff;
-    --tab-inactive:        rgba(13,21,32,0.4);
-    --tab-hover:           rgba(13,21,32,0.72);
-    --dl-btn-text:         rgba(13,21,32,0.65);
-    --dl-btn-border:       rgba(13,21,32,0.16);
-    --dl-btn-hover-bg:     rgba(13,21,32,0.04);
-    --dl-btn-hover-border: rgba(13,21,32,0.28);
-    --dl-btn-hover-text:   #0d1520;
+    --tab-inactive:        rgba(8,17,30,0.45);
+    --tab-hover:           rgba(8,17,30,0.78);
+    --dl-btn-text:         #002147;
+    --dl-btn-border:       rgba(0,33,71,0.35);
+    --dl-btn-hover-bg:     rgba(0,33,71,0.06);
+    --dl-btn-hover-border: rgba(0,33,71,0.55);
+    --dl-btn-hover-text:   #002147;
     --toggle-bg:           #ffffff;
-    --toggle-border:       rgba(0,0,0,0.16);
-    --toggle-text:         rgba(13,21,32,0.65);
-    --toggle-hover-bg:     #f0f3fa;
-    --card-shadow:         0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
-    --divider:             rgba(0,0,0,0.07);
+    --toggle-border:       rgba(0,0,0,0.2);
+    --toggle-text:         rgba(8,17,30,0.7);
+    --toggle-hover-bg:     #edf1f8;
+    --card-shadow:         0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.05);
+    --divider:             rgba(0,0,0,0.09);
     --notification-bg:     #ffffff;
-    --scrollbar:           rgba(0,0,0,0.1);
-    --scrollbar-hover:     rgba(0,0,0,0.2);
+    --scrollbar:           rgba(0,0,0,0.12);
+    --scrollbar-hover:     rgba(0,0,0,0.22);
 }
 """
 
@@ -805,7 +805,15 @@ header    { visibility: hidden; }
 
 /* ── Inputs ──────────────────────────────────────────────────────────────── */
 .stTextInput > div > div > input,
-.stTextArea > div > div > textarea {
+.stTextArea > div > div > textarea,
+[data-baseweb="input"],
+[data-baseweb="base-input"],
+[data-baseweb="textarea"],
+[data-baseweb="input"] input,
+[data-baseweb="base-input"] input,
+[data-baseweb="textarea"] textarea,
+[data-baseweb="input"] > div,
+[data-baseweb="base-input"] > div {
     background: var(--input-bg) !important;
     border: 1px solid var(--border-strong) !important;
     border-radius: 8px !important;
@@ -815,13 +823,23 @@ header    { visibility: hidden; }
     transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
 }
 .stTextInput > div > div > input:focus,
-.stTextArea > div > div > textarea:focus {
+.stTextArea > div > div > textarea:focus,
+[data-baseweb="input"]:focus-within,
+[data-baseweb="base-input"]:focus-within,
+[data-baseweb="textarea"]:focus-within {
     border-color: rgba(200,16,46,0.45) !important;
     box-shadow: 0 0 0 3px rgba(200,16,46,0.09) !important;
     background: var(--input-bg-focus) !important;
 }
+[data-baseweb="input"]:focus-within input,
+[data-baseweb="base-input"]:focus-within input {
+    background: var(--input-bg-focus) !important;
+}
 .stTextInput > div > div > input::placeholder,
-.stTextArea > div > div > textarea::placeholder {
+.stTextArea > div > div > textarea::placeholder,
+[data-baseweb="input"] input::placeholder,
+[data-baseweb="base-input"] input::placeholder,
+[data-baseweb="textarea"] textarea::placeholder {
     color: var(--placeholder) !important;
 }
 label {
@@ -855,10 +873,18 @@ label {
 }
 
 /* ── Chat ────────────────────────────────────────────────────────────────── */
-[data-testid="stChatInput"] > div {
+[data-testid="stChatInput"] > div,
+[data-testid="stChatInput"] [data-baseweb="textarea"],
+[data-testid="stChatInput"] [data-baseweb="base-input"],
+[data-testid="stChatInputTextArea"],
+[data-testid="stChatInputTextArea"] textarea {
     background: var(--chat-input-bg) !important;
+    color: var(--text) !important;
     border: 1px solid var(--border-strong) !important;
     border-radius: 10px !important;
+}
+[data-testid="stChatInputTextArea"] textarea::placeholder {
+    color: var(--placeholder) !important;
 }
 [data-testid="stChatMessage"] {
     background: var(--chat-msg-bg) !important;
