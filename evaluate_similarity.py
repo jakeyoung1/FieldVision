@@ -285,6 +285,37 @@ def interpret(score: float) -> str:
     return "little overlap"
 
 
+def fit_cell(pdf: FPDF, text: str, max_w: float) -> str:
+    """Truncate text with ellipsis so it fits within max_w mm at the current font."""
+    while pdf.get_string_width(text) > max_w - 2 and len(text) > 4:
+        text = text[:-4] + "..."
+    return text
+
+
+def draw_table(pdf: FPDF, headers: list, rows: list, col_widths: list,
+               row_h: float = 8) -> None:
+    """Draw a clean, bordered HTML-style table with a navy header row."""
+    # Header row — navy background, white bold text
+    pdf.set_fill_color(0, 33, 71)
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_font("Helvetica", "B", 11)
+    for header, w in zip(headers, col_widths):
+        pdf.cell(w, row_h, sanitize(str(header)), border=1, fill=True, align="C")
+    pdf.ln()
+
+    # Data rows — alternating white / very-light-blue
+    pdf.set_font("Helvetica", size=11)
+    for r_idx, row in enumerate(rows):
+        pdf.set_fill_color(*(255, 255, 255) if r_idx % 2 == 0 else (242, 246, 252))
+        pdf.set_text_color(0, 0, 0)
+        for val, w in zip(row, col_widths):
+            text = fit_cell(pdf, sanitize(str(val)), w)
+            pdf.cell(w, row_h, text, border=1, fill=True)
+        pdf.ln()
+
+    pdf.set_text_color(0, 0, 0)
+
+
 def build_evaluation_pdf(
     input_files: list[str],
     transcription: str,
@@ -297,170 +328,169 @@ def build_evaluation_pdf(
     pdf = FPDF()
     pdf.set_margins(18, 18, 18)
     pdf.set_auto_page_break(auto=True, margin=18)
+    usable_w = pdf.w - pdf.l_margin - pdf.r_margin   # ~174 mm for A4
+
     pdf.add_page()
 
-    # Title
-    pdf.set_font("Helvetica", "B", 18)
+    # ── Title ────────────────────────────────────────────────────────────────
+    pdf.set_font("Helvetica", "B", 20)
     pdf.set_text_color(0, 33, 71)
-    pdf.multi_cell(0, 9, sanitize("FieldVision RAG Evaluation Report"),
+    pdf.multi_cell(0, 10, sanitize("FieldVision -- RAG Evaluation Report"),
                    new_x="LMARGIN", new_y="NEXT")
     pdf.set_text_color(0, 0, 0)
 
-    pdf.set_font("Helvetica", "I", 10)
+    pdf.set_font("Helvetica", "I", 11)
     pdf.set_text_color(100, 100, 100)
-    pdf.multi_cell(0, 5, sanitize(
-        f"Generated {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | "
-        f"model={CLAUDE_MODEL} | embedder={EMBED_MODEL}"),
+    pdf.multi_cell(0, 6, sanitize(
+        f"Generated {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}  |  "
+        f"model: {CLAUDE_MODEL}  |  embedder: {EMBED_MODEL}"),
         new_x="LMARGIN", new_y="NEXT")
     pdf.set_text_color(0, 0, 0)
+    pdf.ln(5)
+
+    # ── Input files ──────────────────────────────────────────────────────────
+    pdf.set_font("Helvetica", "B", 13)
+    pdf.multi_cell(0, 7, sanitize("Input Files"), new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("Helvetica", size=11)
+    for f in input_files:
+        pdf.multi_cell(0, 6, sanitize(f"  - {f}"), new_x="LMARGIN", new_y="NEXT")
     pdf.ln(4)
 
-    # Input files
-    pdf.set_font("Helvetica", "B", 11)
-    pdf.multi_cell(0, 6, sanitize("Input files"), new_x="LMARGIN", new_y="NEXT")
-    pdf.set_font("Helvetica", size=10)
-    for f in input_files:
-        pdf.multi_cell(0, 5, sanitize(f"  - {f}"), new_x="LMARGIN", new_y="NEXT")
-    pdf.ln(3)
-
-    # --- Headline numbers ----------------------------------------------------
+    # ── Headline metrics table ────────────────────────────────────────────────
     scores = [h["score"] for h in retrieval_hits]
     mean_r = sum(scores) / len(scores) if scores else 0.0
     max_r  = max(scores) if scores else 0.0
 
-    pdf.set_font("Helvetica", "B", 13)
+    pdf.set_font("Helvetica", "B", 14)
     pdf.set_text_color(200, 16, 46)
-    pdf.multi_cell(0, 7, sanitize("Headline metrics"),
-                   new_x="LMARGIN", new_y="NEXT")
-    pdf.set_text_color(0, 0, 0)
-
-    pdf.set_font("Helvetica", size=10)
-    metrics = [
-        ("Retrieval quality (top-1 cosine)",  f"{max_r:.3f}",  interpret(max_r)),
-        ("Retrieval quality (top-5 mean)",    f"{mean_r:.3f}", interpret(mean_r)),
-        ("Generation faithfulness (cosine)",  f"{grounding_score:.3f}", interpret(grounding_score)),
-    ]
-    for label, val, note in metrics:
-        pdf.set_font("Helvetica", "B", 10)
-        pdf.cell(80, 6, sanitize(label))
-        pdf.set_font("Helvetica", size=10)
-        pdf.cell(25, 6, sanitize(val))
-        pdf.set_font("Helvetica", "I", 10)
-        pdf.set_text_color(100, 100, 100)
-        pdf.multi_cell(0, 6, sanitize(note), new_x="LMARGIN", new_y="NEXT")
-        pdf.set_text_color(0, 0, 0)
-
-    pdf.ln(2)
-    pdf.set_font("Helvetica", "I", 9)
-    pdf.set_text_color(110, 110, 110)
-    pdf.multi_cell(0, 5, sanitize(
-        f"Latency: OCR {latency['ocr']:.1f}s | retrieval {latency['retrieval']:.2f}s | "
-        f"generation {latency['generation']:.1f}s | total {latency['total']:.1f}s"),
-        new_x="LMARGIN", new_y="NEXT")
+    pdf.multi_cell(0, 8, sanitize("Headline Metrics"), new_x="LMARGIN", new_y="NEXT")
     pdf.set_text_color(0, 0, 0)
     pdf.ln(2)
 
-    # Scale note
-    pdf.set_font("Helvetica", "I", 9)
-    pdf.set_text_color(110, 110, 110)
-    pdf.multi_cell(0, 5, sanitize(
-        "Note on scale: cosine similarity on L2-normalised sentence-transformer "
-        "embeddings typically falls in [0.0, 0.8] for English text. Values above "
-        "0.5 are strong; values near 0 indicate no semantic overlap. Random pairs "
-        "of unrelated English sentences embed to ~0.05-0.15."),
-        new_x="LMARGIN", new_y="NEXT")
-    pdf.set_text_color(0, 0, 0)
+    draw_table(
+        pdf,
+        headers=["Metric", "Score", "Interpretation"],
+        rows=[
+            ("Retrieval quality (top-1 cosine)",  f"{max_r:.3f}",           interpret(max_r)),
+            ("Retrieval quality (top-5 mean)",    f"{mean_r:.3f}",          interpret(mean_r)),
+            ("Generation faithfulness (cosine)",  f"{grounding_score:.3f}", interpret(grounding_score)),
+        ],
+        col_widths=[100, 24, usable_w - 124],
+    )
     pdf.ln(3)
 
-    # --- Retrieval table -----------------------------------------------------
-    pdf.set_font("Helvetica", "B", 13)
-    pdf.set_text_color(200, 16, 46)
-    pdf.multi_cell(0, 7, sanitize("Retrieval quality -- top-5 Branch Rickey hits"),
-                   new_x="LMARGIN", new_y="NEXT")
-    pdf.set_text_color(0, 0, 0)
-
-    pdf.set_font("Helvetica", "B", 9)
-    pdf.cell(12, 6, "Rank", border=1)
-    pdf.cell(22, 6, "Cosine", border=1)
-    pdf.cell(0,  6, "Item", border=1, new_x="LMARGIN", new_y="NEXT")
-
-    pdf.set_font("Helvetica", size=9)
-    for i, hit in enumerate(retrieval_hits, 1):
-        pdf.cell(12, 6, str(i), border=1)
-        pdf.cell(22, 6, f"{hit['score']:.3f}", border=1)
-        item = str(hit.get("item", ""))[:80]
-        pdf.cell(0, 6, sanitize(item), border=1, new_x="LMARGIN", new_y="NEXT")
-
-    pdf.ln(2)
-    pdf.set_font("Helvetica", "I", 9)
+    pdf.set_font("Helvetica", "I", 10)
     pdf.set_text_color(110, 110, 110)
-    pdf.multi_cell(0, 5, sanitize(
-        "Interpretation: each row is one retrieved historical Branch Rickey "
-        "report. Higher cosine = more topically similar to the input notes. A "
-        "high top-1 with a sharp drop to rank 5 indicates the retriever is "
-        "discriminating well; flat scores suggest weak signal in the corpus."),
+    pdf.multi_cell(0, 6, sanitize(
+        f"Latency -- OCR: {latency['ocr']:.1f}s  |  retrieval: {latency['retrieval']:.2f}s  |  "
+        f"generation: {latency['generation']:.1f}s  |  total: {latency['total']:.1f}s"),
+        new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(2)
+    pdf.multi_cell(0, 6, sanitize(
+        "Scale: cosine on L2-normalised sentence-transformer embeddings typically falls in "
+        "[0.0, 0.8] for English text. Values above 0.5 are strong; values near 0 indicate "
+        "no semantic overlap. Unrelated sentence pairs embed to ~0.05-0.15."),
         new_x="LMARGIN", new_y="NEXT")
     pdf.set_text_color(0, 0, 0)
+    pdf.ln(5)
+
+    # ── Retrieval quality table ───────────────────────────────────────────────
+    pdf.set_font("Helvetica", "B", 14)
+    pdf.set_text_color(200, 16, 46)
+    pdf.multi_cell(0, 8, sanitize("Retrieval Quality -- Top-5 Branch Rickey Hits"),
+                   new_x="LMARGIN", new_y="NEXT")
+    pdf.set_text_color(0, 0, 0)
     pdf.ln(2)
 
-    # Retrieved snippets (truncated)
-    pdf.set_font("Helvetica", "B", 10)
-    pdf.multi_cell(0, 6, sanitize("Top-5 retrieved snippets (300 chars each)"),
+    draw_table(
+        pdf,
+        headers=["#", "Cosine", "Quality", "Item"],
+        rows=[
+            (str(i), f"{h['score']:.3f}", interpret(h["score"]),
+             str(h.get("item", ""))[:80])
+            for i, h in enumerate(retrieval_hits, 1)
+        ],
+        col_widths=[10, 22, 42, usable_w - 74],
+    )
+    pdf.ln(2)
+    pdf.set_font("Helvetica", "I", 10)
+    pdf.set_text_color(110, 110, 110)
+    pdf.multi_cell(0, 6, sanitize(
+        "Each row is one retrieved historical Branch Rickey report. Higher cosine = more "
+        "topically similar to the input notes. A high top-1 with a sharp drop to rank 5 "
+        "indicates good discriminating retrieval; flat scores suggest weak signal."),
+        new_x="LMARGIN", new_y="NEXT")
+    pdf.set_text_color(0, 0, 0)
+    pdf.ln(4)
+
+    # ── Top-5 retrieved snippets ──────────────────────────────────────────────
+    pdf.set_font("Helvetica", "B", 13)
+    pdf.multi_cell(0, 7, sanitize("Top-5 Retrieved Snippets (300 chars each)"),
                    new_x="LMARGIN", new_y="NEXT")
     for i, hit in enumerate(retrieval_hits, 1):
-        pdf.set_font("Helvetica", "B", 9)
-        pdf.multi_cell(0, 5, sanitize(f"#{i}  cosine={hit['score']:.3f}"),
+        pdf.set_font("Helvetica", "B", 11)
+        pdf.multi_cell(0, 6, sanitize(f"#{i}  --  cosine = {hit['score']:.3f}"),
                        new_x="LMARGIN", new_y="NEXT")
-        pdf.set_font("Helvetica", size=9)
+        pdf.set_font("Helvetica", size=11)
         snippet = str(hit["text"])[:300].replace("\n", " ")
         if len(hit["text"]) > 300:
             snippet += "..."
-        pdf.multi_cell(0, 5, sanitize(snippet), new_x="LMARGIN", new_y="NEXT")
-        pdf.ln(1)
+        pdf.multi_cell(0, 6, sanitize(snippet), new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(2)
 
-    # --- Grounding section ---------------------------------------------------
+    # ── Grounding section ─────────────────────────────────────────────────────
     pdf.add_page()
-    pdf.set_font("Helvetica", "B", 13)
+    pdf.set_font("Helvetica", "B", 14)
     pdf.set_text_color(200, 16, 46)
-    pdf.multi_cell(0, 7, sanitize("Generation faithfulness (grounding)"),
+    pdf.multi_cell(0, 8, sanitize("Generation Faithfulness (Grounding)"),
                    new_x="LMARGIN", new_y="NEXT")
     pdf.set_text_color(0, 0, 0)
-
-    pdf.set_font("Helvetica", size=10)
-    pdf.multi_cell(0, 5.5, sanitize(
-        f"Cosine between the input transcription and the Claude-generated "
-        f"report: {grounding_score:.3f} ({interpret(grounding_score)}). "
-        f"A higher score indicates the generated report stayed closer to the "
-        f"semantics of the original notes -- i.e., it was grounded in the input "
-        f"rather than drifting into generic baseball commentary."),
-        new_x="LMARGIN", new_y="NEXT")
-    pdf.ln(3)
-
-    # --- Appendix: transcription and generated report -----------------------
-    pdf.set_font("Helvetica", "B", 13)
-    pdf.set_text_color(200, 16, 46)
-    pdf.multi_cell(0, 7, sanitize("Input transcription (Claude OCR output)"),
-                   new_x="LMARGIN", new_y="NEXT")
-    pdf.set_text_color(0, 0, 0)
-    pdf.set_font("Helvetica", size=9)
-    pdf.multi_cell(0, 5, sanitize(transcription), new_x="LMARGIN", new_y="NEXT")
     pdf.ln(2)
 
-    pdf.set_font("Helvetica", "B", 13)
+    draw_table(
+        pdf,
+        headers=["Metric", "Score", "Interpretation"],
+        rows=[("Input vs. Generated report (cosine)",
+               f"{grounding_score:.3f}", interpret(grounding_score))],
+        col_widths=[100, 24, usable_w - 124],
+    )
+    pdf.ln(3)
+
+    pdf.set_font("Helvetica", size=11)
+    pdf.multi_cell(0, 6, sanitize(
+        f"A cosine of {grounding_score:.3f} ({interpret(grounding_score)}) between the input "
+        f"transcription and the Claude-generated report. A higher score indicates the report "
+        f"stayed closer to the semantics of the original notes -- i.e., it was grounded in the "
+        f"input rather than drifting into generic baseball commentary."),
+        new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(4)
+
+    # ── Appendix: transcription ───────────────────────────────────────────────
+    pdf.set_font("Helvetica", "B", 14)
     pdf.set_text_color(200, 16, 46)
-    pdf.multi_cell(0, 7, sanitize("Generated report (the RAG output)"),
+    pdf.multi_cell(0, 8, sanitize("Input Transcription (Claude OCR)"),
                    new_x="LMARGIN", new_y="NEXT")
     pdf.set_text_color(0, 0, 0)
-    pdf.set_font("Helvetica", size=10)
+    pdf.set_font("Helvetica", size=11)
+    pdf.multi_cell(0, 6, sanitize(transcription), new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(3)
+
+    # ── Appendix: generated report ────────────────────────────────────────────
+    pdf.set_font("Helvetica", "B", 14)
+    pdf.set_text_color(200, 16, 46)
+    pdf.multi_cell(0, 8, sanitize("Generated Report (RAG Output)"),
+                   new_x="LMARGIN", new_y="NEXT")
+    pdf.set_text_color(0, 0, 0)
+    pdf.set_font("Helvetica", size=11)
     for line in generated_report.split("\n"):
         clean = sanitize(line)
         if line.startswith("## "):
-            pdf.set_font("Helvetica", "B", 11)
-            pdf.ln(1)
-            pdf.multi_cell(0, 6, clean.replace("## ", ""), new_x="LMARGIN", new_y="NEXT")
-            pdf.set_font("Helvetica", size=10)
+            pdf.set_font("Helvetica", "B", 12)
+            pdf.ln(2)
+            pdf.multi_cell(0, 7, clean.replace("## ", ""), new_x="LMARGIN", new_y="NEXT")
+            pdf.set_font("Helvetica", size=11)
         else:
-            pdf.multi_cell(0, 5.5, clean if clean.strip() else " ",
+            pdf.multi_cell(0, 6, clean if clean.strip() else " ",
                            new_x="LMARGIN", new_y="NEXT")
 
     pdf.output(output_path)

@@ -545,10 +545,10 @@ _DARK_VARS = """
     --dl-btn-hover-bg:     rgba(255,255,255,0.07);
     --dl-btn-hover-border: rgba(240,244,255,0.35);
     --dl-btn-hover-text:   #ffffff;
-    --toggle-bg:           #172033;
-    --toggle-border:       rgba(255,255,255,0.18);
-    --toggle-text:         rgba(240,244,255,0.75);
-    --toggle-hover-bg:     #1e2d47;
+    --toggle-bg:           #dde4f0;
+    --toggle-border:       rgba(180,196,218,0.6);
+    --toggle-text:         #001533;
+    --toggle-hover-bg:     #edf1fa;
     --card-shadow:         none;
     --divider:             rgba(255,255,255,0.07);
     --notification-bg:     #0f1624;
@@ -590,10 +590,10 @@ _LIGHT_VARS = """
     --dl-btn-hover-bg:     rgba(0,33,71,0.06);
     --dl-btn-hover-border: rgba(0,33,71,0.55);
     --dl-btn-hover-text:   #002147;
-    --toggle-bg:           #ffffff;
-    --toggle-border:       rgba(0,0,0,0.2);
-    --toggle-text:         rgba(8,17,30,0.7);
-    --toggle-hover-bg:     #edf1f8;
+    --toggle-bg:           #002147;
+    --toggle-border:       rgba(0,33,71,0.0);
+    --toggle-text:         #ffffff;
+    --toggle-hover-bg:     #003268;
     --card-shadow:         0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.05);
     --divider:             rgba(0,0,0,0.09);
     --notification-bg:     #ffffff;
@@ -607,7 +607,7 @@ _BASE_CSS = """
 
 /* Saint Mary's — Navy #002147 | Red #C8102E | White #FFFFFF */
 
-html, body, [class*="css"] { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+html, body, [class*="css"] { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; font-size: 15px; }
 
 #MainMenu { visibility: hidden; }
 footer    { visibility: hidden; }
@@ -635,34 +635,28 @@ header    { visibility: hidden; }
     gap: 0.8rem;
     margin-bottom: 0.55rem;
 }
-.fv-logo-mark {
-    width: 38px; height: 38px;
-    background: #C8102E;
-    border-radius: 8px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.9rem;
-    font-weight: 800;
-    color: #ffffff;
-    letter-spacing: -0.02em;
+.fv-logo-svg {
+    width: 58px;
+    height: 58px;
     flex-shrink: 0;
+    filter: drop-shadow(0 2px 8px rgba(0,33,71,0.3));
 }
 .fv-hero h1 {
-    font-size: 2.2rem;
+    font-size: 2.9rem;
     font-weight: 700;
-    letter-spacing: -0.025em;
+    letter-spacing: -0.03em;
     color: var(--hero-title);
     margin: 0;
     line-height: 1;
 }
 .fv-hero p {
     color: var(--text-subtle);
-    font-size: 0.72rem;
+    font-size: 0.82rem;
     font-weight: 500;
-    letter-spacing: 0.22em;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
-    margin: 0.6rem 0 0;
+    margin: 0.65rem 0 0;
+    text-align: center;
 }
 
 /* ── Section labels ─────────────────────────────────────────────────────── */
@@ -703,7 +697,7 @@ header    { visibility: hidden; }
     margin: 0.5rem 0 1.5rem;
     line-height: 1.8;
     color: var(--report-text);
-    font-size: 0.92rem;
+    font-size: 1rem;
     box-shadow: var(--card-shadow);
 }
 
@@ -735,7 +729,7 @@ header    { visibility: hidden; }
     border-bottom: 2px solid transparent !important;
     border-radius: 0 !important;
     color: var(--tab-inactive) !important;
-    font-size: 0.82rem !important;
+    font-size: 0.9rem !important;
     font-weight: 500 !important;
     padding: 0.7rem 1.2rem !important;
     margin-bottom: -1px !important;
@@ -759,7 +753,7 @@ header    { visibility: hidden; }
     border: none !important;
     border-radius: 8px !important;
     font-weight: 600 !important;
-    font-size: 0.85rem !important;
+    font-size: 0.92rem !important;
     letter-spacing: 0.015em !important;
     padding: 0.6rem 1.3rem !important;
     box-shadow: 0 2px 8px rgba(200,16,46,0.3) !important;
@@ -819,7 +813,7 @@ header    { visibility: hidden; }
     border-radius: 8px !important;
     color: var(--text) !important;
     font-family: 'Inter', sans-serif !important;
-    font-size: 0.88rem !important;
+    font-size: 0.95rem !important;
     transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
 }
 .stTextInput > div > div > input:focus,
@@ -844,7 +838,7 @@ header    { visibility: hidden; }
 }
 label {
     color: var(--text-muted) !important;
-    font-size: 0.78rem !important;
+    font-size: 0.85rem !important;
     font-weight: 500 !important;
 }
 
@@ -948,10 +942,19 @@ def main():
     st.markdown("""
         <div class="fv-hero">
             <div class="fv-logo">
-                <div class="fv-logo-mark">FV</div>
+                <svg class="fv-logo-svg" viewBox="0 0 56 56" fill="none"
+                     xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="28" cy="28" r="27" fill="#002147"
+                            stroke="#C8102E" stroke-width="2.5"/>
+                    <circle cx="28" cy="28" r="21" fill="none"
+                            stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+                    <text x="28" y="36" text-anchor="middle" fill="white"
+                          font-family="Inter,sans-serif" font-size="18"
+                          font-weight="800" letter-spacing="-0.5">FV</text>
+                </svg>
                 <h1>FieldVision</h1>
             </div>
-            <p>Baseball Scouting Intelligence &nbsp;·&nbsp; Saint Mary's College</p>
+            <p>Baseball Scouting Intelligence</p>
         </div>
     """, unsafe_allow_html=True)
 
