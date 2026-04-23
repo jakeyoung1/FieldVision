@@ -36,6 +36,97 @@ CSV_PATH        = "data/branch-rickey-scouting.csv"
 EMBEDDINGS_PATH = "data/embeddings.npy"
 TOP_K           = 5
 
+# ---------------------------------------------------------------------------
+# Brand logo — baseball / AI mark (SVG, rendered inline in hero)
+# ---------------------------------------------------------------------------
+LOGO_SVG = '''<svg class="fv-logo-svg" viewBox="0 0 680 680" role="img"
+     xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="ball-clip"><circle cx="340" cy="340" r="240"/></clipPath>
+  </defs>
+  <circle cx="340" cy="340" r="248" fill="#0A1628" opacity="0.18"/>
+  <circle cx="340" cy="340" r="240" fill="#F8F6F2"/>
+  <circle cx="340" cy="340" r="240" fill="none" stroke="#0D2B6E" stroke-width="3"/>
+  <path d="M200 200 Q100 340 200 480" fill="none" stroke="#CC1A1A"
+        stroke-width="6" stroke-linecap="round"/>
+  <path d="M480 200 Q580 340 480 480" fill="none" stroke="#CC1A1A"
+        stroke-width="6" stroke-linecap="round"/>
+  <g stroke="#CC1A1A" stroke-width="2.5" stroke-linecap="round">
+    <line x1="194" y1="226" x2="208" y2="232"/>
+    <line x1="178" y1="262" x2="193" y2="265"/>
+    <line x1="168" y1="300" x2="183" y2="300"/>
+    <line x1="168" y1="340" x2="183" y2="340"/>
+    <line x1="168" y1="378" x2="183" y2="380"/>
+    <line x1="178" y1="416" x2="193" y2="413"/>
+    <line x1="194" y1="452" x2="208" y2="446"/>
+  </g>
+  <g stroke="#CC1A1A" stroke-width="2.5" stroke-linecap="round">
+    <line x1="486" y1="226" x2="472" y2="232"/>
+    <line x1="502" y1="262" x2="487" y2="265"/>
+    <line x1="512" y1="300" x2="497" y2="300"/>
+    <line x1="512" y1="340" x2="497" y2="340"/>
+    <line x1="512" y1="378" x2="497" y2="380"/>
+    <line x1="502" y1="416" x2="487" y2="413"/>
+    <line x1="486" y1="452" x2="472" y2="446"/>
+  </g>
+  <g clip-path="url(#ball-clip)" opacity="0.78">
+    <line x1="220" y1="270" x2="460" y2="270" stroke="#0D2B6E"
+          stroke-width="1.2" opacity="0.5"/>
+    <line x1="220" y1="340" x2="460" y2="340" stroke="#0D2B6E"
+          stroke-width="1.2" opacity="0.5"/>
+    <line x1="220" y1="410" x2="460" y2="410" stroke="#0D2B6E"
+          stroke-width="1.2" opacity="0.5"/>
+    <line x1="280" y1="200" x2="280" y2="480" stroke="#0D2B6E"
+          stroke-width="1.2" opacity="0.5"/>
+    <line x1="340" y1="200" x2="340" y2="480" stroke="#0D2B6E"
+          stroke-width="1.2" opacity="0.5"/>
+    <line x1="400" y1="200" x2="400" y2="480" stroke="#0D2B6E"
+          stroke-width="1.2" opacity="0.5"/>
+    <g fill="#0D2B6E" opacity="0.6">
+      <rect x="276" y="266" width="8" height="8" rx="1"/>
+      <rect x="336" y="266" width="8" height="8" rx="1"/>
+      <rect x="396" y="266" width="8" height="8" rx="1"/>
+      <rect x="276" y="336" width="8" height="8" rx="1"/>
+      <rect x="396" y="336" width="8" height="8" rx="1"/>
+      <rect x="276" y="406" width="8" height="8" rx="1"/>
+      <rect x="336" y="406" width="8" height="8" rx="1"/>
+      <rect x="396" y="406" width="8" height="8" rx="1"/>
+    </g>
+    <circle cx="340" cy="340" r="54" fill="#0D2B6E" opacity="0.92"/>
+    <circle cx="340" cy="340" r="44" fill="#F8F6F2" opacity="1"/>
+    <g stroke="#CC1A1A" stroke-width="2" fill="none" opacity="0.9">
+      <line x1="340" y1="296" x2="340" y2="270"/>
+      <line x1="340" y1="384" x2="340" y2="410"/>
+      <line x1="296" y1="340" x2="270" y2="340"/>
+      <line x1="384" y1="340" x2="410" y2="340"/>
+      <line x1="312" y1="312" x2="295" y2="295"/>
+      <line x1="368" y1="312" x2="385" y2="295"/>
+      <line x1="312" y1="368" x2="295" y2="385"/>
+      <line x1="368" y1="368" x2="385" y2="385"/>
+    </g>
+    <g fill="#CC1A1A" opacity="0.9">
+      <circle cx="340" cy="268" r="4"/>
+      <circle cx="340" cy="412" r="4"/>
+      <circle cx="268" cy="340" r="4"/>
+      <circle cx="412" cy="340" r="4"/>
+      <circle cx="293" cy="293" r="3.5"/>
+      <circle cx="387" cy="293" r="3.5"/>
+      <circle cx="293" cy="387" r="3.5"/>
+      <circle cx="387" cy="387" r="3.5"/>
+    </g>
+    <g stroke="#0D2B6E" stroke-width="1.4" fill="none" opacity="0.7">
+      <path d="M340 305 L355 313 L355 330 L340 338 L325 330 L325 313 Z"/>
+      <path d="M340 342 L355 350 L355 367 L340 375 L325 367 L325 350 Z"/>
+    </g>
+    <text x="340" y="347" text-anchor="middle" dominant-baseline="central"
+      font-family="Helvetica Neue, Arial, sans-serif"
+      font-size="22" font-weight="700" fill="#0D2B6E" letter-spacing="2">AI</text>
+  </g>
+  <circle cx="340" cy="340" r="240" fill="none" stroke="#0D2B6E" stroke-width="5"/>
+  <circle cx="340" cy="340" r="232" fill="none" stroke="#CC1A1A"
+          stroke-width="1.5" opacity="0.5"/>
+</svg>'''
+
 SYSTEM_PROMPT = """You are an experienced baseball scout and analyst with decades of evaluating players at every level — high school, college, and professional. You have deep knowledge of hitting mechanics, pitching, fielding, baserunning, and long-term player development.
 
 Your job is to read scouting notes and turn them into clear, useful intelligence for coaches and scouts.
@@ -636,10 +727,10 @@ header    { visibility: hidden; }
     margin-bottom: 0.55rem;
 }
 .fv-logo-svg {
-    width: 58px;
-    height: 58px;
+    width: 76px;
+    height: 76px;
     flex-shrink: 0;
-    filter: drop-shadow(0 2px 8px rgba(0,33,71,0.3));
+    filter: drop-shadow(0 3px 10px rgba(0,33,71,0.25));
 }
 .fv-hero h1 {
     font-size: 2.9rem;
@@ -939,19 +1030,10 @@ def main():
     st.markdown(get_css(st.session_state.theme), unsafe_allow_html=True)
 
     # Hero
-    st.markdown("""
+    st.markdown(f"""
         <div class="fv-hero">
             <div class="fv-logo">
-                <svg class="fv-logo-svg" viewBox="0 0 56 56" fill="none"
-                     xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="28" cy="28" r="27" fill="#002147"
-                            stroke="#C8102E" stroke-width="2.5"/>
-                    <circle cx="28" cy="28" r="21" fill="none"
-                            stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
-                    <text x="28" y="36" text-anchor="middle" fill="white"
-                          font-family="Inter,sans-serif" font-size="18"
-                          font-weight="800" letter-spacing="-0.5">FV</text>
-                </svg>
+                {LOGO_SVG}
                 <h1>FieldVision</h1>
             </div>
             <p>Baseball Scouting Intelligence</p>
