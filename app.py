@@ -13,6 +13,7 @@ except ImportError:
 
 import uuid
 import base64
+from pathlib import Path
 import faiss
 from fpdf import FPDF
 import anthropic
@@ -126,6 +127,20 @@ LOGO_SVG = '''<svg class="fv-logo-svg" viewBox="0 0 680 680" role="img"
   <circle cx="340" cy="340" r="232" fill="none" stroke="#CC1A1A"
           stroke-width="1.5" opacity="0.5"/>
 </svg>'''
+
+# ---------------------------------------------------------------------------
+# Logo loader — prefers static/logo.png (PNG with transparency) at startup;
+# falls back to the inline SVG if the file isn't present yet.
+# ---------------------------------------------------------------------------
+def _load_logo_data_url(path: str = "static/logo.png") -> str:
+    """Return a base64 data-URL for the PNG logo, or '' if file not found."""
+    try:
+        data = Path(path).read_bytes()
+        return f"data:image/png;base64,{base64.b64encode(data).decode()}"
+    except FileNotFoundError:
+        return ""
+
+_LOGO_DATA_URL: str = _load_logo_data_url()
 
 SYSTEM_PROMPT = """You are an experienced baseball scout and analyst with decades of evaluating players at every level — high school, college, and professional. You have deep knowledge of hitting mechanics, pitching, fielding, baserunning, and long-term player development.
 
@@ -732,6 +747,13 @@ header    { visibility: hidden; }
     flex-shrink: 0;
     filter: drop-shadow(0 3px 10px rgba(0,33,71,0.25));
 }
+.fv-logo-img {
+    width: 90px;
+    height: 90px;
+    object-fit: contain;
+    flex-shrink: 0;
+    filter: drop-shadow(0 3px 10px rgba(0,33,71,0.2));
+}
 .fv-hero h1 {
     font-size: 2.9rem;
     font-weight: 700;
@@ -1030,10 +1052,14 @@ def main():
     st.markdown(get_css(st.session_state.theme), unsafe_allow_html=True)
 
     # Hero
+    _logo_element = (
+        f'<img src="{_LOGO_DATA_URL}" class="fv-logo-img" alt="FieldVision logo"/>'
+        if _LOGO_DATA_URL else LOGO_SVG
+    )
     st.markdown(f"""
         <div class="fv-hero">
             <div class="fv-logo">
-                {LOGO_SVG}
+                {_logo_element}
                 <h1>FieldVision</h1>
             </div>
             <p>Baseball Scouting Intelligence</p>
