@@ -44,6 +44,68 @@
       color: #f0f4ff;
       font-family: 'Inter', sans-serif;
       -webkit-font-smoothing: antialiased;
+      cursor: none; /* hide default, use custom */
+    }
+    @media (hover: none) { body { cursor: auto; } }
+
+    /* ── Custom cursor ─────────────────────────────────────────────────────── */
+    #cursor-dot {
+      position: fixed; z-index: 9999; pointer-events: none;
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #C8102E;
+      transform: translate(-50%, -50%);
+      transition: transform .1s ease, opacity .2s ease;
+      will-change: left, top;
+    }
+    #cursor-ring {
+      position: fixed; z-index: 9998; pointer-events: none;
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 1.5px solid rgba(200,16,46,.5);
+      transform: translate(-50%, -50%);
+      transition: width .2s ease, height .2s ease, border-color .2s ease;
+      will-change: left, top;
+    }
+    #cursor-glow {
+      position: fixed; z-index: 9996; pointer-events: none;
+      width: 500px; height: 500px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(200,16,46,.055) 0%, transparent 68%);
+      transform: translate(-50%, -50%);
+      will-change: left, top;
+      mix-blend-mode: screen;
+    }
+    body:has(a:hover) #cursor-ring,
+    body:has(button:hover) #cursor-ring { width: 56px; height: 56px; border-color: rgba(200,16,46,.8); }
+    @media (hover: none) { #cursor-dot, #cursor-ring, #cursor-glow { display: none; } }
+
+    /* ── Scroll progress bar ───────────────────────────────────────────────── */
+    #scroll-progress {
+      position: fixed; top: 0; left: 0; z-index: 200;
+      height: 2px; width: 0%;
+      background: linear-gradient(90deg, #002147, #C8102E, #ff6b6b);
+      transition: width .08s linear;
+      pointer-events: none;
+    }
+
+    /* ── Ambient orbs ──────────────────────────────────────────────────────── */
+    .ambient-orb {
+      position: fixed; pointer-events: none;
+      border-radius: 50%; filter: blur(90px);
+      z-index: 0; will-change: transform;
+    }
+    @keyframes orb-float-1 {
+      0%,100% { transform: translate(0,0) scale(1); }
+      33%     { transform: translate(40px,-30px) scale(1.06); }
+      66%     { transform: translate(-25px,20px) scale(0.96); }
+    }
+    @keyframes orb-float-2 {
+      0%,100% { transform: translate(0,0) scale(1); }
+      40%     { transform: translate(-35px,28px) scale(1.09); }
+      72%     { transform: translate(22px,-18px) scale(0.94); }
+    }
+    @keyframes orb-float-3 {
+      0%,100% { transform: translate(0,0) scale(1); }
+      25%     { transform: translate(22px,38px) scale(1.04); }
+      60%     { transform: translate(-30px,-22px) scale(0.98); }
     }
 
     /* ── Grid background ───────────────────────────────────────────────────── */
@@ -81,12 +143,10 @@
       background: #0f1624;
       border: 1px solid rgba(255,255,255,.08);
       border-radius: 16px;
-      transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
-    }
-    .card:hover {
-      transform: translateY(-3px);
-      border-color: rgba(200,16,46,.3);
-      box-shadow: 0 12px 40px rgba(200,16,46,.1);
+      position: relative;
+      overflow: hidden;
+      transition: border-color .2s ease, box-shadow .2s ease;
+      cursor: default;
     }
 
     /* ── Nav link underline ────────────────────────────────────────────────── */
@@ -153,10 +213,29 @@
       font-size: .82rem;
       font-weight: 500;
       color: rgba(240,244,255,.75);
-      transition: border-color .2s ease, color .2s ease;
+      transition: border-color .2s ease, color .2s ease, box-shadow .2s ease;
       cursor: default;
+      position: relative;
+      overflow: hidden;
     }
-    .tech-badge:hover { border-color: rgba(200,16,46,.35); color: #f0f4ff; }
+    .tech-badge:hover {
+      border-color: rgba(200,16,46,.4);
+      color: #f0f4ff;
+      box-shadow: 0 0 20px rgba(200,16,46,.1);
+    }
+    .tech-badge::after {
+      content: '';
+      position: absolute;
+      top: -100%; left: -60%;
+      width: 40%; height: 300%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.09), transparent);
+      transform: skewX(-20deg);
+    }
+    .tech-badge:hover::after { animation: badge-scan .45s ease forwards; }
+    @keyframes badge-scan {
+      from { left: -60%; }
+      to   { left: 140%; }
+    }
 
     /* ── CTA buttons ───────────────────────────────────────────────────────── */
     .btn-primary {
@@ -168,11 +247,15 @@
       font-weight: 600;
       font-size: .9rem;
       box-shadow: 0 4px 20px rgba(200,16,46,.42);
-      transition: opacity .2s ease, transform .15s ease;
+      transition: opacity .2s ease, transform .15s ease, box-shadow .2s ease;
       text-decoration: none;
-      cursor: pointer;
+      cursor: none;
     }
-    .btn-primary:hover { opacity: .9; transform: translateY(-1px); }
+    .btn-primary:hover {
+      opacity: .9;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 36px rgba(200,16,46,.55);
+    }
 
     .btn-secondary {
       display: inline-flex; align-items: center; gap: 8px;
@@ -183,11 +266,15 @@
       border-radius: 12px;
       font-weight: 600;
       font-size: .9rem;
-      transition: background .2s ease, transform .15s ease;
+      transition: background .2s ease, transform .15s ease, border-color .2s ease;
       text-decoration: none;
-      cursor: pointer;
+      cursor: none;
     }
-    .btn-secondary:hover { background: rgba(255,255,255,.09); transform: translateY(-1px); }
+    .btn-secondary:hover {
+      background: rgba(255,255,255,.09);
+      transform: translateY(-2px);
+      border-color: rgba(255,255,255,.22);
+    }
 
     /* ── Roadmap timeline ──────────────────────────────────────────────────── */
     .timeline-track {
@@ -195,7 +282,10 @@
       left: 22px; top: 0; bottom: 0;
       width: 2px;
       background: linear-gradient(to bottom, rgba(200,16,46,.5), rgba(200,16,46,.05));
+      clip-path: inset(0 0 100% 0);
+      transition: clip-path 1.8s cubic-bezier(.4,0,.2,1);
     }
+    .timeline-track.drawn { clip-path: inset(0 0 0% 0); }
 
     /* ── Scrollbar ─────────────────────────────────────────────────────────── */
     ::-webkit-scrollbar { width: 4px; }
@@ -225,6 +315,12 @@
       border: 1px solid rgba(200,16,46,.22);
       margin-bottom: 1.25rem;
       flex-shrink: 0;
+      transition: background .2s ease, border-color .2s ease, box-shadow .2s ease;
+    }
+    .card:hover .icon-ring {
+      background: rgba(200,16,46,.2);
+      border-color: rgba(200,16,46,.4);
+      box-shadow: 0 0 16px rgba(200,16,46,.2);
     }
 
     /* ── Stat number ───────────────────────────────────────────────────────── */
@@ -236,10 +332,153 @@
       line-height: 1;
       margin-bottom: .35rem;
     }
+
+    /* ── Hero canvas ───────────────────────────────────────────────────────── */
+    #hero-canvas {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      pointer-events: none; z-index: 0;
+    }
+
+    /* ── Radar rings ───────────────────────────────────────────────────────── */
+    .radar-rings {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none; z-index: 1;
+    }
+    .radar-ring {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      border: 1px solid rgba(200,16,46,.1);
+      animation: ring-pulse 5s ease-in-out infinite;
+    }
+    @keyframes ring-pulse {
+      0%,100% { opacity: .15; transform: translate(-50%,-50%) scale(1); }
+      50%     { opacity: .04; transform: translate(-50%,-50%) scale(1.04); }
+    }
+
+    /* ── Radar sweep ───────────────────────────────────────────────────────── */
+    .radar-sweep-wrap {
+      position: absolute; top: 50%; left: 50%;
+      width: 900px; height: 900px;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      overflow: hidden;
+      pointer-events: none; z-index: 1;
+    }
+    .radar-sweep {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: conic-gradient(
+        from 0deg,
+        transparent 0deg,
+        rgba(200,16,46,.0) 0deg,
+        rgba(200,16,46,.18) 15deg,
+        rgba(200,16,46,.08) 30deg,
+        transparent 45deg
+      );
+      animation: radar-rotate 7s linear infinite;
+    }
+    @keyframes radar-rotate {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
+    /* ── Section divider glow line ─────────────────────────────────────────── */
+    .section-topline {
+      position: absolute; top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 0%; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(200,16,46,.35), transparent);
+      transition: width 1.2s cubic-bezier(.4,0,.2,1);
+      pointer-events: none;
+    }
+    .section-topline.active { width: 70%; }
+
+    /* ── Card spotlight (mouse glow) ───────────────────────────────────────── */
+    .card-spot {
+      position: absolute; inset: 0; border-radius: inherit;
+      pointer-events: none; opacity: 0;
+      transition: opacity .3s ease;
+      background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.07), transparent 65%);
+    }
+    .card:hover .card-spot { opacity: 1; }
+
+    /* ── Floating data particles (features bg) ─────────────────────────────── */
+    .data-particle {
+      position: absolute;
+      width: 3px; height: 3px;
+      border-radius: 50%;
+      background: rgba(200,16,46,.4);
+      pointer-events: none;
+      animation: float-particle linear infinite;
+    }
+    @keyframes float-particle {
+      0%   { transform: translateY(0) translateX(0); opacity: 0; }
+      10%  { opacity: .6; }
+      90%  { opacity: .4; }
+      100% { transform: translateY(-120px) translateX(var(--dx,10px)); opacity: 0; }
+    }
+
+    /* ── Hero tagline typewriter cursor ────────────────────────────────────── */
+    @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0; } }
+    .type-cursor {
+      display: inline-block;
+      width: 2px; height: 1em;
+      background: #C8102E;
+      margin-left: 3px;
+      vertical-align: text-bottom;
+      animation: blink 1s step-end infinite;
+    }
+
+    /* ── Shimmer on CTA banner heading ─────────────────────────────────────── */
+    @keyframes shimmer-move {
+      0%   { background-position: -200% center; }
+      100% { background-position: 200% center; }
+    }
+    .shimmer-heading {
+      background: linear-gradient(90deg,
+        #fff 0%, rgba(255,255,255,.7) 35%,
+        #fff 50%, rgba(255,255,255,.7) 65%, #fff 100%);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: shimmer-move 5s linear infinite;
+    }
+
+    /* ── Reduce motion ─────────────────────────────────────────────────────── */
+    @media (prefers-reduced-motion: reduce) {
+      .radar-ring, .radar-sweep, .ambient-orb, .data-particle,
+      .pulse-dot, .bounce-y, .type-cursor, .shimmer-heading { animation: none !important; }
+      #cursor-dot, #cursor-ring, #cursor-glow { display: none !important; }
+      body { cursor: auto !important; }
+      .btn-primary, .btn-secondary { cursor: pointer !important; }
+    }
+
+    /* ── Responsive helpers ─────────────────────────────────────────────────── */
+    .hidden-mobile { display: none; }
+    @media (min-width: 768px) { .hidden-mobile { display: flex; } }
+    .coach-grid { grid-template-columns: 1fr; }
+    @media (min-width: 768px) { .coach-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 640px) { .stat-num { font-size: 1.5rem; } }
   </style>
 </head>
 
 <body class="grid-bg">
+
+<!-- ── Interactive chrome ──────────────────────────────────────────────────── -->
+<div id="cursor-dot"  aria-hidden="true"></div>
+<div id="cursor-ring" aria-hidden="true"></div>
+<div id="cursor-glow" aria-hidden="true"></div>
+<div id="scroll-progress" aria-hidden="true"></div>
+
+<!-- Ambient drifting orbs -->
+<div class="ambient-orb" style="width:800px;height:800px;top:-300px;right:-250px;background:rgba(0,33,71,.55);animation:orb-float-1 20s ease-in-out infinite;" aria-hidden="true"></div>
+<div class="ambient-orb" style="width:600px;height:600px;bottom:25%;left:-200px;background:rgba(200,16,46,.07);animation:orb-float-2 26s ease-in-out infinite;" aria-hidden="true"></div>
+<div class="ambient-orb" style="width:380px;height:380px;top:55%;right:8%;background:rgba(0,33,71,.35);animation:orb-float-3 18s ease-in-out infinite;" aria-hidden="true"></div>
+
 
 <!-- ════════════════════════════════════════════════════════════════════════
      NAVIGATION
@@ -278,15 +517,31 @@
 <!-- ════════════════════════════════════════════════════════════════════════
      HERO
 ═════════════════════════════════════════════════════════════════════════ -->
-<section style="position:relative;min-height:100vh;display:flex;flex-direction:column;
+<section id="hero-section" style="position:relative;min-height:100vh;display:flex;flex-direction:column;
      align-items:center;justify-content:center;padding:96px 24px 80px;overflow:hidden;">
+
+  <!-- Particle canvas -->
+  <canvas id="hero-canvas" aria-hidden="true"></canvas>
+
+  <!-- Radar rings -->
+  <div class="radar-rings" aria-hidden="true">
+    <div class="radar-ring" style="width:900px;height:900px;animation-delay:0s;"></div>
+    <div class="radar-ring" style="width:640px;height:640px;animation-delay:1s;"></div>
+    <div class="radar-ring" style="width:420px;height:420px;animation-delay:2s;"></div>
+    <div class="radar-ring" style="width:240px;height:240px;animation-delay:2.8s;"></div>
+  </div>
+
+  <!-- Radar sweep -->
+  <div class="radar-sweep-wrap" aria-hidden="true">
+    <div class="radar-sweep"></div>
+  </div>
 
   <!-- Background radial glow -->
   <div style="position:absolute;top:25%;left:50%;transform:translateX(-50%);
-       width:700px;height:500px;pointer-events:none;
+       width:700px;height:500px;pointer-events:none;z-index:2;
        background:radial-gradient(ellipse at center, rgba(200,16,46,.09) 0%, transparent 68%);"></div>
   <div style="position:absolute;bottom:0;left:0;right:0;height:220px;
-       background:linear-gradient(to top,#070b14,transparent);pointer-events:none;"></div>
+       background:linear-gradient(to top,#070b14,transparent);pointer-events:none;z-index:2;"></div>
 
   <div style="position:relative;z-index:10;text-align:center;max-width:860px;margin:0 auto;">
 
@@ -298,8 +553,8 @@
 
     <!-- Logo + Title -->
     <div class="reveal" style="transition-delay:.08s;display:flex;flex-direction:column;align-items:center;gap:20px;margin-bottom:20px;">
-      <img src="static/logo.png" alt="FieldVision logo"
-           style="width:130px;height:130px;object-fit:contain;filter:drop-shadow(0 10px 32px rgba(0,33,71,.45));"
+      <img src="static/logo.png" alt="FieldVision logo" id="hero-logo"
+           style="width:130px;height:130px;object-fit:contain;filter:drop-shadow(0 10px 32px rgba(0,33,71,.45));transition:transform .4s ease;"
            onerror="this.style.display='none'" />
       <h1 style="font-size:clamp(3.2rem,7vw,5.5rem);font-weight:900;letter-spacing:-.04em;line-height:1;">
         <span class="grad-white">Field</span><span class="grad-red">Vision</span>
@@ -324,7 +579,6 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </a>
       <a href="https://github.com/jakeyoung1/FieldVision" target="_blank" class="btn-secondary">
-        <!-- GitHub icon -->
         <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
         View on GitHub
       </a>
@@ -332,19 +586,19 @@
 
     <!-- Stats row -->
     <div class="reveal" style="transition-delay:.32s;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;max-width:760px;margin:0 auto;">
-      <div class="card" style="padding:20px 12px;text-align:center;cursor:default;">
-        <div class="stat-num">1,919</div>
+      <div class="card" style="padding:20px 12px;text-align:center;">
+        <div class="stat-num" data-target="1919">0</div>
         <div style="font-size:.68rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:rgba(240,244,255,.38);">Rickey Docs</div>
       </div>
-      <div class="card" style="padding:20px 12px;text-align:center;cursor:default;">
-        <div class="stat-num">384</div>
+      <div class="card" style="padding:20px 12px;text-align:center;">
+        <div class="stat-num" data-target="384">0</div>
         <div style="font-size:.68rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:rgba(240,244,255,.38);">Vector Dims</div>
       </div>
-      <div class="card" style="padding:20px 12px;text-align:center;cursor:default;">
+      <div class="card" style="padding:20px 12px;text-align:center;">
         <div class="stat-num">Top 5</div>
         <div style="font-size:.68rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:rgba(240,244,255,.38);">RAG Hits</div>
       </div>
-      <div class="card" style="padding:20px 12px;text-align:center;cursor:default;">
+      <div class="card" style="padding:20px 12px;text-align:center;">
         <div class="stat-num" style="font-size:1.1rem;padding-top:.3rem;">Sonnet&nbsp;4.5</div>
         <div style="font-size:.68rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:rgba(240,244,255,.38);">Claude Model</div>
       </div>
@@ -353,7 +607,7 @@
   </div>
 
   <!-- Scroll cue -->
-  <div class="bounce-y" style="position:absolute;bottom:32px;left:50%;color:rgba(240,244,255,.2);">
+  <div class="bounce-y" style="position:absolute;bottom:32px;left:50%;color:rgba(240,244,255,.2);z-index:10;">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
   </div>
 </section>
@@ -362,7 +616,8 @@
 <!-- ════════════════════════════════════════════════════════════════════════
      PIPELINE — HOW IT WORKS
 ═════════════════════════════════════════════════════════════════════════ -->
-<section id="pipeline" style="padding:100px 24px;">
+<section id="pipeline" style="padding:100px 24px;position:relative;">
+  <div class="section-topline" data-topline></div>
   <div style="max-width:1200px;margin:0 auto;">
 
     <div class="reveal" style="text-align:center;margin-bottom:64px;">
@@ -377,6 +632,7 @@
 
       <!-- Step 1 -->
       <div class="card reveal" style="padding:36px 32px;transition-delay:.08s;">
+        <div class="card-spot"></div>
         <div class="icon-ring">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C8102E" stroke-width="2" aria-hidden="true"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M8 7h8M8 11h8M8 15h5"/></svg>
         </div>
@@ -390,6 +646,7 @@
 
       <!-- Step 2 -->
       <div class="card reveal" style="padding:36px 32px;transition-delay:.18s;">
+        <div class="card-spot"></div>
         <div class="icon-ring">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C8102E" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         </div>
@@ -403,6 +660,7 @@
 
       <!-- Step 3 -->
       <div class="card reveal" style="padding:36px 32px;transition-delay:.28s;">
+        <div class="card-spot"></div>
         <div class="icon-ring">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C8102E" stroke-width="2" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 12l2 2 4-4"/></svg>
         </div>
@@ -422,8 +680,13 @@
 <!-- ════════════════════════════════════════════════════════════════════════
      FEATURES
 ═════════════════════════════════════════════════════════════════════════ -->
-<section id="features" style="padding:100px 24px;background:rgba(15,22,36,.45);">
-  <div style="max-width:1200px;margin:0 auto;">
+<section id="features" style="padding:100px 24px;background:rgba(15,22,36,.45);position:relative;overflow:hidden;">
+  <div class="section-topline" data-topline></div>
+
+  <!-- Floating data particles -->
+  <div id="feature-particles" aria-hidden="true" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;"></div>
+
+  <div style="max-width:1200px;margin:0 auto;position:relative;z-index:1;">
 
     <div class="reveal" style="text-align:center;margin-bottom:64px;">
       <div class="eyebrow">Capabilities</div>
@@ -435,8 +698,8 @@
 
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:16px;">
 
-      <!-- Feature 1 -->
       <div class="card reveal" style="padding:28px;transition-delay:.06s;">
+        <div class="card-spot"></div>
         <div class="icon-ring">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8102E" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
         </div>
@@ -447,8 +710,8 @@
         </p>
       </div>
 
-      <!-- Feature 2 -->
       <div class="card reveal" style="padding:28px;transition-delay:.12s;">
+        <div class="card-spot"></div>
         <div class="icon-ring">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8102E" stroke-width="2" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         </div>
@@ -459,8 +722,8 @@
         </p>
       </div>
 
-      <!-- Feature 3 -->
       <div class="card reveal" style="padding:28px;transition-delay:.18s;">
+        <div class="card-spot"></div>
         <div class="icon-ring">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8102E" stroke-width="2" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
         </div>
@@ -471,8 +734,8 @@
         </p>
       </div>
 
-      <!-- Feature 4 -->
       <div class="card reveal" style="padding:28px;transition-delay:.24s;">
+        <div class="card-spot"></div>
         <div class="icon-ring">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8102E" stroke-width="2" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         </div>
@@ -483,8 +746,8 @@
         </p>
       </div>
 
-      <!-- Feature 5 -->
       <div class="card reveal" style="padding:28px;transition-delay:.30s;">
+        <div class="card-spot"></div>
         <div class="icon-ring">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8102E" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
         </div>
@@ -495,8 +758,8 @@
         </p>
       </div>
 
-      <!-- Feature 6 -->
       <div class="card reveal" style="padding:28px;transition-delay:.36s;">
+        <div class="card-spot"></div>
         <div class="icon-ring">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8102E" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
         </div>
@@ -513,10 +776,11 @@
 
 
 <!-- ════════════════════════════════════════════════════════════════════════
-     COACH REQUESTS — from Obsidian vault / April 2 meeting
+     COACH REQUESTS
 ═════════════════════════════════════════════════════════════════════════ -->
-<section style="padding:100px 24px;">
-  <div style="max-width:1200px;margin:0 auto;display:grid;md:grid-cols-2;gap:48px;align-items:center;"
+<section style="padding:100px 24px;position:relative;">
+  <div class="section-topline" data-topline></div>
+  <div style="max-width:1200px;margin:0 auto;display:grid;gap:48px;align-items:center;"
        class="coach-grid">
 
     <div class="reveal">
@@ -532,7 +796,8 @@
 
     <div class="reveal" style="transition-delay:.12s;display:flex;flex-direction:column;gap:12px;">
 
-      <div class="card" style="padding:18px 22px;display:flex;align-items:center;gap:16px;cursor:default;">
+      <div class="card" style="padding:18px 22px;display:flex;align-items:center;gap:16px;">
+        <div class="card-spot"></div>
         <div style="width:36px;height:36px;border-radius:10px;background:rgba(200,16,46,.12);border:1px solid rgba(200,16,46,.22);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C8102E" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
         </div>
@@ -540,12 +805,11 @@
           <div style="font-weight:600;font-size:.92rem;margin-bottom:2px;">Mass Upload of Player Data</div>
           <div style="color:rgba(240,244,255,.42);font-size:.8rem;">Batch upload multiple player scouting files at once</div>
         </div>
-        <div class="badge badge-planned" style="margin-left:auto;white-space:nowrap;">
-          <span class="badge-dot"></span>Planned
-        </div>
+        <div class="badge badge-planned" style="margin-left:auto;white-space:nowrap;"><span class="badge-dot"></span>Planned</div>
       </div>
 
-      <div class="card" style="padding:18px 22px;display:flex;align-items:center;gap:16px;cursor:default;">
+      <div class="card" style="padding:18px 22px;display:flex;align-items:center;gap:16px;">
+        <div class="card-spot"></div>
         <div style="width:36px;height:36px;border-radius:10px;background:rgba(200,16,46,.12);border:1px solid rgba(200,16,46,.22);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C8102E" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         </div>
@@ -553,12 +817,11 @@
           <div style="font-weight:600;font-size:.92rem;margin-bottom:2px;">Player Comparison Views</div>
           <div style="color:rgba(240,244,255,.42);font-size:.8rem;">Side-by-side analysis of multiple prospects</div>
         </div>
-        <div class="badge badge-planned" style="margin-left:auto;white-space:nowrap;">
-          <span class="badge-dot"></span>Planned
-        </div>
+        <div class="badge badge-planned" style="margin-left:auto;white-space:nowrap;"><span class="badge-dot"></span>Planned</div>
       </div>
 
-      <div class="card" style="padding:18px 22px;display:flex;align-items:center;gap:16px;cursor:default;">
+      <div class="card" style="padding:18px 22px;display:flex;align-items:center;gap:16px;">
+        <div class="card-spot"></div>
         <div style="width:36px;height:36px;border-radius:10px;background:rgba(200,16,46,.12);border:1px solid rgba(200,16,46,.22);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C8102E" stroke-width="2" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
         </div>
@@ -566,12 +829,11 @@
           <div style="font-weight:600;font-size:.92rem;margin-bottom:2px;">Talent Pool Filtering</div>
           <div style="color:rgba(240,244,255,.42);font-size:.8rem;">Filter recruits by position, metrics, and potential</div>
         </div>
-        <div class="badge badge-planned" style="margin-left:auto;white-space:nowrap;">
-          <span class="badge-dot"></span>Planned
-        </div>
+        <div class="badge badge-planned" style="margin-left:auto;white-space:nowrap;"><span class="badge-dot"></span>Planned</div>
       </div>
 
-      <div class="card" style="padding:18px 22px;display:flex;align-items:center;gap:16px;cursor:default;">
+      <div class="card" style="padding:18px 22px;display:flex;align-items:center;gap:16px;">
+        <div class="card-spot"></div>
         <div style="width:36px;height:36px;border-radius:10px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
         </div>
@@ -579,12 +841,11 @@
           <div style="font-weight:600;font-size:.92rem;margin-bottom:2px;">Trackman Data Integration</div>
           <div style="color:rgba(240,244,255,.42);font-size:.8rem;">Full game-by-game pitch analytics dashboard</div>
         </div>
-        <div class="badge badge-blocked" style="margin-left:auto;white-space:nowrap;">
-          <span class="badge-dot"></span>Blocked
-        </div>
+        <div class="badge badge-blocked" style="margin-left:auto;white-space:nowrap;"><span class="badge-dot"></span>Blocked</div>
       </div>
 
-      <div class="card" style="padding:18px 22px;display:flex;align-items:center;gap:16px;cursor:default;">
+      <div class="card" style="padding:18px 22px;display:flex;align-items:center;gap:16px;">
+        <div class="card-spot"></div>
         <div style="width:36px;height:36px;border-radius:10px;background:rgba(200,16,46,.12);border:1px solid rgba(200,16,46,.22);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C8102E" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
         </div>
@@ -592,9 +853,7 @@
           <div style="font-weight:600;font-size:.92rem;margin-bottom:2px;">AI Pitch Interpretation</div>
           <div style="color:rgba(240,244,255,.42);font-size:.8rem;">Plain-language AI explanation of pitch metrics</div>
         </div>
-        <div class="badge badge-planned" style="margin-left:auto;white-space:nowrap;">
-          <span class="badge-dot"></span>Planned
-        </div>
+        <div class="badge badge-planned" style="margin-left:auto;white-space:nowrap;"><span class="badge-dot"></span>Planned</div>
       </div>
 
     </div>
@@ -603,9 +862,10 @@
 
 
 <!-- ════════════════════════════════════════════════════════════════════════
-     ROADMAP — from Obsidian vault backlog
+     ROADMAP
 ═════════════════════════════════════════════════════════════════════════ -->
-<section id="roadmap" style="padding:100px 24px;background:rgba(15,22,36,.45);">
+<section id="roadmap" style="padding:100px 24px;background:rgba(15,22,36,.45);position:relative;">
+  <div class="section-topline" data-topline></div>
   <div style="max-width:800px;margin:0 auto;">
 
     <div class="reveal" style="text-align:center;margin-bottom:64px;">
@@ -619,10 +879,10 @@
     <div style="position:relative;padding-left:52px;">
       <div class="timeline-track"></div>
 
-      <!-- Item 1 — In Progress -->
       <div class="reveal" style="position:relative;margin-bottom:22px;">
-        <div style="position:absolute;left:-42px;top:14px;width:12px;height:12px;border-radius:50%;background:#4ade80;border:2px solid #070b14;box-shadow:0 0 8px rgba(74,222,128,.5);"></div>
-        <div class="card" style="padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:default;">
+        <div style="position:absolute;left:-42px;top:14px;width:12px;height:12px;border-radius:50%;background:#4ade80;border:2px solid #070b14;box-shadow:0 0 10px rgba(74,222,128,.6);animation:pulse-dot 2s ease-in-out infinite;"></div>
+        <div class="card" style="padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <div class="card-spot"></div>
           <div>
             <div style="font-weight:600;font-size:.95rem;margin-bottom:4px;">Fix Duplicate Chat Bug</div>
             <div style="color:rgba(240,244,255,.42);font-size:.8rem;">Chat response appearing twice on first message</div>
@@ -631,10 +891,10 @@
         </div>
       </div>
 
-      <!-- Item 2 -->
       <div class="reveal" style="position:relative;margin-bottom:22px;transition-delay:.06s;">
         <div style="position:absolute;left:-42px;top:14px;width:12px;height:12px;border-radius:50%;background:#f07080;border:2px solid #070b14;"></div>
-        <div class="card" style="padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:default;">
+        <div class="card" style="padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <div class="card-spot"></div>
           <div>
             <div style="font-weight:600;font-size:.95rem;margin-bottom:4px;">Mass Upload Feature</div>
             <div style="color:rgba(240,244,255,.42);font-size:.8rem;">Batch processing for multiple player scouting files</div>
@@ -643,10 +903,10 @@
         </div>
       </div>
 
-      <!-- Item 3 -->
       <div class="reveal" style="position:relative;margin-bottom:22px;transition-delay:.12s;">
         <div style="position:absolute;left:-42px;top:14px;width:12px;height:12px;border-radius:50%;background:#f07080;border:2px solid #070b14;"></div>
-        <div class="card" style="padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:default;">
+        <div class="card" style="padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <div class="card-spot"></div>
           <div>
             <div style="font-weight:600;font-size:.95rem;margin-bottom:4px;">Player Comparison View</div>
             <div style="color:rgba(240,244,255,.42);font-size:.8rem;">Side-by-side prospect evaluation across sessions</div>
@@ -655,10 +915,10 @@
         </div>
       </div>
 
-      <!-- Item 4 -->
       <div class="reveal" style="position:relative;margin-bottom:22px;transition-delay:.18s;">
         <div style="position:absolute;left:-42px;top:14px;width:12px;height:12px;border-radius:50%;background:#f07080;border:2px solid #070b14;"></div>
-        <div class="card" style="padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:default;">
+        <div class="card" style="padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <div class="card-spot"></div>
           <div>
             <div style="font-weight:600;font-size:.95rem;margin-bottom:4px;">Talent Pool Filtering</div>
             <div style="color:rgba(240,244,255,.42);font-size:.8rem;">Filter and rank prospects by position and metrics</div>
@@ -667,10 +927,10 @@
         </div>
       </div>
 
-      <!-- Item 5 — Blocked -->
       <div class="reveal" style="position:relative;margin-bottom:22px;transition-delay:.24s;">
-        <div style="position:absolute;left:-42px;top:14px;width:12px;height:12px;border-radius:50%;background:#fbbf24;border:2px solid #070b14;box-shadow:0 0 8px rgba(251,191,36,.4);"></div>
-        <div class="card" style="padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:default;">
+        <div style="position:absolute;left:-42px;top:14px;width:12px;height:12px;border-radius:50%;background:#fbbf24;border:2px solid #070b14;box-shadow:0 0 10px rgba(251,191,36,.5);animation:pulse-dot 2s ease-in-out infinite;"></div>
+        <div class="card" style="padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <div class="card-spot"></div>
           <div>
             <div style="font-weight:600;font-size:.95rem;margin-bottom:4px;">Trackman Integration</div>
             <div style="color:rgba(240,244,255,.42);font-size:.8rem;">Awaiting group approval before proceeding</div>
@@ -679,10 +939,10 @@
         </div>
       </div>
 
-      <!-- Item 6 -->
       <div class="reveal" style="position:relative;transition-delay:.30s;">
         <div style="position:absolute;left:-42px;top:14px;width:12px;height:12px;border-radius:50%;background:#f07080;border:2px solid #070b14;"></div>
-        <div class="card" style="padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:default;">
+        <div class="card" style="padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <div class="card-spot"></div>
           <div>
             <div style="font-weight:600;font-size:.95rem;margin-bottom:4px;">AI Pitch Interpretation</div>
             <div style="color:rgba(240,244,255,.42);font-size:.8rem;">Natural-language explanation of pitch metrics</div>
@@ -699,7 +959,8 @@
 <!-- ════════════════════════════════════════════════════════════════════════
      TECH STACK
 ═════════════════════════════════════════════════════════════════════════ -->
-<section id="stack" style="padding:100px 24px;">
+<section id="stack" style="padding:100px 24px;position:relative;">
+  <div class="section-topline" data-topline></div>
   <div style="max-width:1200px;margin:0 auto;text-align:center;">
 
     <div class="reveal" style="margin-bottom:56px;">
@@ -711,7 +972,6 @@
     </div>
 
     <div class="reveal" style="transition-delay:.08s;display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-bottom:48px;">
-
       <div class="tech-badge">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="#C8102E" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8" stroke="#fff" stroke-width="2" fill="none"/></svg>
         Claude Sonnet 4.5
@@ -746,7 +1006,7 @@
       </div>
     </div>
 
-    <!-- Architecture diagram strip -->
+    <!-- Architecture strip -->
     <div class="reveal" style="transition-delay:.16s;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px;font-family:'Fira Code',monospace;font-size:.75rem;color:rgba(240,244,255,.38);">
       <span style="padding:6px 14px;background:#0f1624;border:1px solid rgba(255,255,255,.08);border-radius:8px;color:rgba(240,244,255,.65);">Image / PDF</span>
       <span style="color:rgba(200,16,46,.5);">→</span>
@@ -768,15 +1028,22 @@
 <!-- ════════════════════════════════════════════════════════════════════════
      CTA BANNER
 ═════════════════════════════════════════════════════════════════════════ -->
-<section style="padding:80px 24px;">
+<section style="padding:80px 24px;position:relative;">
+  <div class="section-topline" data-topline></div>
   <div class="reveal" style="max-width:820px;margin:0 auto;text-align:center;padding:64px 40px;border-radius:24px;
        background:linear-gradient(135deg,#0f1624 0%,#172033 100%);
        border:1px solid rgba(200,16,46,.2);
-       box-shadow:0 0 60px rgba(200,16,46,.08), 0 0 120px rgba(200,16,46,.04);">
+       box-shadow:0 0 60px rgba(200,16,46,.08), 0 0 120px rgba(200,16,46,.04);
+       position:relative;overflow:hidden;">
+
+    <!-- Inner glow top -->
+    <div style="position:absolute;top:-80px;left:50%;transform:translateX(-50%);width:400px;height:200px;
+         background:radial-gradient(ellipse,rgba(200,16,46,.1),transparent 70%);pointer-events:none;"></div>
+
     <img src="static/logo.png" alt="FieldVision"
          style="width:72px;height:72px;object-fit:contain;margin:0 auto 24px;display:block;filter:drop-shadow(0 4px 16px rgba(0,33,71,.5));"
          onerror="this.style.display='none'" />
-    <h2 style="font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;letter-spacing:-.03em;margin-bottom:16px;">
+    <h2 class="shimmer-heading" style="font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;letter-spacing:-.03em;margin-bottom:16px;">
       Ready to scout smarter?
     </h2>
     <p style="color:rgba(240,244,255,.52);font-size:1rem;line-height:1.8;max-width:480px;margin:0 auto 36px;">
@@ -800,7 +1067,8 @@
 <!-- ════════════════════════════════════════════════════════════════════════
      EMBEDDED APP
 ═════════════════════════════════════════════════════════════════════════ -->
-<section id="app" style="padding:100px 24px 60px;">
+<section id="app" style="padding:100px 24px 60px;position:relative;">
+  <div class="section-topline" data-topline></div>
   <div style="max-width:1200px;margin:0 auto;">
 
     <div class="reveal" style="text-align:center;margin-bottom:40px;">
@@ -818,7 +1086,7 @@
          border:1px solid rgba(200,16,46,.22);
          box-shadow:0 0 60px rgba(200,16,46,.08), 0 0 0 1px rgba(255,255,255,.04);">
 
-      <!-- Placeholder — shown until STREAMLIT_URL is set -->
+      <!-- Placeholder -->
       <div id="app-placeholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;
            height:600px;background:#0f1624;gap:20px;text-align:center;padding:40px;">
         <img src="static/logo.png" alt="FieldVision"
@@ -831,7 +1099,7 @@
         </div>
       </div>
 
-      <!-- Iframe — injected by JS once URL is known -->
+      <!-- Iframe -->
       <iframe id="app-frame"
               src=""
               style="display:none;width:100%;height:900px;border:none;background:#070b14;"
@@ -844,7 +1112,7 @@
     <div id="app-external-link" style="display:none;text-align:center;margin-top:20px;">
       <a id="app-tab-link" href="#" target="_blank"
          style="font-size:.82rem;color:rgba(240,244,255,.38);text-decoration:none;
-                transition:color .2s ease;cursor:pointer;"
+                transition:color .2s ease;"
          onmouseover="this.style.color='rgba(240,244,255,.7)'"
          onmouseout="this.style.color='rgba(240,244,255,.38)'">
         Open in full tab &nbsp;↗
@@ -877,16 +1145,11 @@
     </div>
 
     <div style="display:flex;align-items:center;gap:20px;">
+      <a href="#app" style="font-size:.82rem;color:rgba(240,244,255,.45);text-decoration:none;transition:color .2s ease;"
+         onmouseover="this.style.color='#f0f4ff'" onmouseout="this.style.color='rgba(240,244,255,.45)'">App</a>
       <a href="https://github.com/jakeyoung1/FieldVision" target="_blank"
-         style="font-size:.82rem;color:rgba(240,244,255,.45);text-decoration:none;transition:color .2s ease;cursor:pointer;"
-         onmouseover="this.style.color='#f0f4ff'" onmouseout="this.style.color='rgba(240,244,255,.45)'">
-        App
-      </a>
-      <a href="https://github.com/jakeyoung1/FieldVision" target="_blank"
-         style="font-size:.82rem;color:rgba(240,244,255,.45);text-decoration:none;transition:color .2s ease;cursor:pointer;"
-         onmouseover="this.style.color='#f0f4ff'" onmouseout="this.style.color='rgba(240,244,255,.45)'">
-        GitHub
-      </a>
+         style="font-size:.82rem;color:rgba(240,244,255,.45);text-decoration:none;transition:color .2s ease;"
+         onmouseover="this.style.color='#f0f4ff'" onmouseout="this.style.color='rgba(240,244,255,.45)'">GitHub</a>
     </div>
 
   </div>
@@ -894,68 +1157,312 @@
 
 
 <!-- ════════════════════════════════════════════════════════════════════════
-     JAVASCRIPT — Scroll reveal + navbar scroll effect
+     JAVASCRIPT
 ═════════════════════════════════════════════════════════════════════════ -->
 <script>
-  // ── Intersection Observer (scroll reveal) ──────────────────────────────
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
-        observer.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
-
-  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
-
-  // ── Navbar shadow on scroll ────────────────────────────────────────────
-  const navbar = document.getElementById('navbar');
-  window.addEventListener('scroll', () => {
-    if (window.scrollY > 20) {
-      navbar.style.boxShadow = '0 4px 32px rgba(0,0,0,0.35)';
-    } else {
-      navbar.style.boxShadow = 'none';
+// ── Scroll reveal ─────────────────────────────────────────────────────────
+const revealObs = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      revealObs.unobserve(entry.target);
     }
-  }, { passive: true });
+  });
+}, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
 
-  // ── Wire Streamlit embed ───────────────────────────────────────────────
-  (function () {
-    const url = (typeof STREAMLIT_URL !== 'undefined') ? STREAMLIT_URL.trim() : '';
-    const placeholder = document.getElementById('app-placeholder');
-    const frame       = document.getElementById('app-frame');
-    const extBlock    = document.getElementById('app-external-link');
-    const extLink     = document.getElementById('app-tab-link');
+// ── Navbar shadow on scroll ───────────────────────────────────────────────
+const navbar = document.getElementById('navbar');
+window.addEventListener('scroll', () => {
+  navbar.style.boxShadow = window.scrollY > 20 ? '0 4px 32px rgba(0,0,0,0.35)' : 'none';
+}, { passive: true });
 
-    if (url) {
-      // Hide placeholder, show iframe
-      if (placeholder) placeholder.style.display = 'none';
-      if (frame) {
-        frame.src = url + '?embed=true&embed_options=hide_toolbar,hide_footer,hide_loading_screen';
-        frame.style.display = 'block';
-      }
-      // Show "Open in full tab" link
-      if (extBlock) extBlock.style.display = 'block';
-      if (extLink)  extLink.href = url;
+// ── Wire Streamlit embed ──────────────────────────────────────────────────
+(function () {
+  const url = (typeof STREAMLIT_URL !== 'undefined') ? STREAMLIT_URL.trim() : '';
+  const placeholder = document.getElementById('app-placeholder');
+  const frame       = document.getElementById('app-frame');
+  const extBlock    = document.getElementById('app-external-link');
+  const extLink     = document.getElementById('app-tab-link');
+  if (url) {
+    if (placeholder) placeholder.style.display = 'none';
+    if (frame) {
+      frame.src = url + '?embed=true&embed_options=hide_toolbar,hide_footer,hide_loading_screen';
+      frame.style.display = 'block';
     }
-    // If url is empty, placeholder stays visible (default state)
-  })();
-</script>
-
-<style>
-  /* Responsive grid for coach section */
-  .coach-grid { grid-template-columns: 1fr; }
-  @media (min-width: 768px) { .coach-grid { grid-template-columns: 1fr 1fr; } }
-
-  /* Hide nav links on mobile */
-  .hidden-mobile { display: none; }
-  @media (min-width: 768px) { .hidden-mobile { display: flex; } }
-
-  /* Mobile stat grid → 2 col */
-  @media (max-width: 640px) {
-    .stat-num { font-size: 1.5rem; }
+    if (extBlock) extBlock.style.display = 'block';
+    if (extLink)  extLink.href = url;
   }
-</style>
+})();
+
+// ── Scroll progress bar ───────────────────────────────────────────────────
+(function () {
+  const bar = document.getElementById('scroll-progress');
+  if (!bar) return;
+  window.addEventListener('scroll', () => {
+    const pct = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight) * 100;
+    bar.style.width = Math.min(pct, 100) + '%';
+  }, { passive: true });
+})();
+
+// ── Custom cursor ─────────────────────────────────────────────────────────
+(function () {
+  if (window.matchMedia('(hover: none)').matches) return;
+  const dot  = document.getElementById('cursor-dot');
+  const ring = document.getElementById('cursor-ring');
+  const glow = document.getElementById('cursor-glow');
+  if (!dot) return;
+
+  let mx = -200, my = -200;
+  let rx = -200, ry = -200;
+  let gx = -200, gy = -200;
+
+  document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; }, { passive: true });
+
+  function loop() {
+    // Dot snaps to cursor
+    dot.style.left  = mx + 'px';
+    dot.style.top   = my + 'px';
+    // Ring lags slightly
+    rx += (mx - rx) * 0.18;
+    ry += (my - ry) * 0.18;
+    ring.style.left = rx + 'px';
+    ring.style.top  = ry + 'px';
+    // Glow lags more
+    gx += (mx - gx) * 0.07;
+    gy += (my - gy) * 0.07;
+    glow.style.left = gx + 'px';
+    glow.style.top  = gy + 'px';
+    requestAnimationFrame(loop);
+  }
+  loop();
+
+  // Scale ring on hover over interactive elements
+  document.addEventListener('mouseover', e => {
+    const t = e.target.closest('a, button, .card, .tech-badge, .btn-primary, .btn-secondary');
+    if (t) {
+      ring.style.width  = '52px';
+      ring.style.height = '52px';
+      ring.style.borderColor = 'rgba(200,16,46,.75)';
+      dot.style.transform = 'translate(-50%,-50%) scale(1.6)';
+    }
+  });
+  document.addEventListener('mouseout', e => {
+    const t = e.target.closest('a, button, .card, .tech-badge, .btn-primary, .btn-secondary');
+    if (t) {
+      ring.style.width  = '36px';
+      ring.style.height = '36px';
+      ring.style.borderColor = 'rgba(200,16,46,.5)';
+      dot.style.transform = 'translate(-50%,-50%) scale(1)';
+    }
+  });
+})();
+
+// ── Canvas particle field ─────────────────────────────────────────────────
+(function () {
+  const canvas = document.getElementById('hero-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W, H;
+  const PARTICLES = 110;
+  const LINK_DIST = 110;
+  let particles = [];
+  let mouse = { x: -9999, y: -9999 };
+
+  function resize() {
+    const sect = document.getElementById('hero-section');
+    W = canvas.width  = sect.offsetWidth;
+    H = canvas.height = sect.offsetHeight;
+  }
+
+  function makeP() {
+    return {
+      x:  Math.random() * W,
+      y:  Math.random() * H,
+      vx: (Math.random() - .5) * .28,
+      vy: (Math.random() - .5) * .28,
+      r:  Math.random() * 1.4 + .4,
+      a:  Math.random() * .45 + .15,
+    };
+  }
+
+  function init() { resize(); particles = Array.from({length: PARTICLES}, makeP); }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+      // Mouse repel
+      const dx = p.x - mouse.x, dy = p.y - mouse.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist < 130 && dist > 0) {
+        const f = (130 - dist) / 130;
+        p.vx += (dx / dist) * f * 0.05;
+        p.vy += (dy / dist) * f * 0.05;
+      }
+      // Dampen
+      p.vx *= .97; p.vy *= .97;
+      p.x += p.vx; p.y += p.vy;
+      // Wrap
+      if (p.x < 0) p.x = W; else if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H; else if (p.y > H) p.y = 0;
+
+      // Draw dot
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(200,16,46,${p.a})`;
+      ctx.fill();
+
+      // Draw links
+      for (let j = i + 1; j < particles.length; j++) {
+        const q = particles[j];
+        const d = Math.hypot(p.x - q.x, p.y - q.y);
+        if (d < LINK_DIST) {
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(q.x, q.y);
+          ctx.strokeStyle = `rgba(200,16,46,${(1 - d / LINK_DIST) * 0.1})`;
+          ctx.lineWidth = .5;
+          ctx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+
+  const hero = document.getElementById('hero-section');
+  hero.addEventListener('mousemove', e => {
+    const r = hero.getBoundingClientRect();
+    mouse.x = e.clientX - r.left;
+    mouse.y = e.clientY - r.top;
+  }, { passive: true });
+  hero.addEventListener('mouseleave', () => { mouse.x = -9999; mouse.y = -9999; });
+
+  init();
+  draw();
+  window.addEventListener('resize', () => { resize(); }, { passive: true });
+})();
+
+// ── Hero logo parallax ────────────────────────────────────────────────────
+(function () {
+  const logo = document.getElementById('hero-logo');
+  if (!logo) return;
+  document.addEventListener('mousemove', e => {
+    if (window.scrollY > window.innerHeight) return;
+    const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+    const dx = (e.clientX - cx) / cx * 10;
+    const dy = (e.clientY - cy) / cy * 7;
+    logo.style.transform = `translate(${dx}px, ${dy}px)`;
+  }, { passive: true });
+})();
+
+// ── Stat counters ─────────────────────────────────────────────────────────
+(function () {
+  const els = document.querySelectorAll('.stat-num[data-target]');
+  const fmt = n => n >= 1000 ? n.toLocaleString() : String(n);
+  const cObs = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const el = entry.target;
+      const target = parseInt(el.dataset.target, 10);
+      const dur = 1800;
+      const start = performance.now();
+      function step(now) {
+        const t = Math.min((now - start) / dur, 1);
+        const ease = 1 - Math.pow(1 - t, 3);
+        el.textContent = fmt(Math.round(ease * target));
+        if (t < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+      cObs.unobserve(el);
+    });
+  }, { threshold: .6 });
+  els.forEach(el => cObs.observe(el));
+})();
+
+// ── 3D card tilt ──────────────────────────────────────────────────────────
+(function () {
+  if (window.matchMedia('(hover: none)').matches) return;
+  document.querySelectorAll('.card').forEach(card => {
+    const spot = card.querySelector('.card-spot');
+
+    card.addEventListener('mousemove', e => {
+      const r = card.getBoundingClientRect();
+      const x = e.clientX - r.left;
+      const y = e.clientY - r.top;
+      const cx = r.width  / 2;
+      const cy = r.height / 2;
+      const tiltX = ((y - cy) / cy) * -7;
+      const tiltY = ((x - cx) / cx) *  7;
+
+      card.style.transform  = `perspective(900px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateY(-3px)`;
+      card.style.transition = 'transform .05s ease, box-shadow .2s ease, border-color .2s ease';
+      card.style.boxShadow  = '0 18px 52px rgba(200,16,46,.14)';
+      card.style.borderColor = 'rgba(200,16,46,.3)';
+
+      if (spot) {
+        spot.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(255,255,255,.09), transparent 65%)`;
+      }
+    }, { passive: true });
+
+    card.addEventListener('mouseleave', () => {
+      card.style.transform   = 'perspective(900px) rotateX(0) rotateY(0) translateY(0)';
+      card.style.transition  = 'transform .4s ease, box-shadow .2s ease, border-color .2s ease';
+      card.style.boxShadow   = '';
+      card.style.borderColor = '';
+      if (spot) spot.style.background = '';
+    });
+  });
+})();
+
+// ── Timeline track draw-in ────────────────────────────────────────────────
+(function () {
+  const track = document.querySelector('.timeline-track');
+  if (!track) return;
+  const tObs = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) {
+      track.classList.add('drawn');
+      tObs.disconnect();
+    }
+  }, { threshold: .05 });
+  tObs.observe(track);
+})();
+
+// ── Section top-line reveal ───────────────────────────────────────────────
+document.querySelectorAll('[data-topline]').forEach(line => {
+  const sObs = new IntersectionObserver(entries => {
+    line.classList.toggle('active', entries[0].isIntersecting);
+  }, { threshold: .05 });
+  sObs.observe(line.parentElement);
+});
+
+// ── Floating data particles in features section ───────────────────────────
+(function () {
+  const container = document.getElementById('feature-particles');
+  if (!container) return;
+  const count = 22;
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'data-particle';
+    const left = Math.random() * 100;
+    const delay = Math.random() * 8;
+    const dur   = Math.random() * 6 + 7;
+    const dx    = (Math.random() - .5) * 40;
+    p.style.cssText = `
+      left: ${left}%;
+      bottom: ${Math.random() * 60}%;
+      --dx: ${dx}px;
+      animation-duration: ${dur}s;
+      animation-delay: ${delay}s;
+      width: ${Math.random() * 3 + 2}px;
+      height: ${Math.random() * 3 + 2}px;
+      opacity: ${Math.random() * .5 + .2};
+    `;
+    container.appendChild(p);
+  }
+})();
+</script>
 
 </body>
 </html>
