@@ -11,6 +11,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
 
+  <!-- ── Streamlit URL — paste your app URL here (one place) ── -->
+  <script>
+    const STREAMLIT_URL = ""; // e.g. "https://yourapp.streamlit.app"
+  </script>
+
   <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -262,9 +267,9 @@
     </div>
 
     <!-- CTA -->
-    <a href="https://github.com/jakeyoung1/FieldVision" target="_blank" class="btn-primary" style="padding:9px 22px;font-size:.82rem;">
+    <a href="#app" class="btn-primary" style="padding:9px 22px;font-size:.82rem;">
       Launch App
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
     </a>
   </div>
 </nav>
@@ -314,9 +319,9 @@
 
     <!-- CTA Row -->
     <div class="reveal" style="transition-delay:.26s;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:14px;margin-bottom:64px;">
-      <a href="https://github.com/jakeyoung1/FieldVision" target="_blank" class="btn-primary">
-        Launch App
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
+      <a href="#app" class="btn-primary">
+        Try It Now
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </a>
       <a href="https://github.com/jakeyoung1/FieldVision" target="_blank" class="btn-secondary">
         <!-- GitHub icon -->
@@ -779,15 +784,73 @@
       applied to today's game in seconds.
     </p>
     <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:14px;">
-      <a href="https://github.com/jakeyoung1/FieldVision" target="_blank" class="btn-primary">
-        Launch FieldVision
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
+      <a href="#app" class="btn-primary">
+        Try FieldVision
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </a>
       <a href="https://github.com/jakeyoung1/FieldVision" target="_blank" class="btn-secondary">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
         Source Code
       </a>
     </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     EMBEDDED APP
+═════════════════════════════════════════════════════════════════════════ -->
+<section id="app" style="padding:100px 24px 60px;">
+  <div style="max-width:1200px;margin:0 auto;">
+
+    <div class="reveal" style="text-align:center;margin-bottom:40px;">
+      <div class="eyebrow">Live App</div>
+      <h2 style="font-size:clamp(2rem,4vw,3rem);font-weight:800;letter-spacing:-.03em;margin-bottom:14px;">
+        FieldVision Intelligence
+      </h2>
+      <p style="font-size:1rem;color:rgba(240,244,255,.5);max-width:480px;margin:0 auto;line-height:1.75;">
+        Upload a scouting note and get an AI-generated report — right here, no new tab.
+      </p>
+    </div>
+
+    <!-- App frame container -->
+    <div class="reveal" style="transition-delay:.1s;position:relative;border-radius:16px;overflow:hidden;
+         border:1px solid rgba(200,16,46,.22);
+         box-shadow:0 0 60px rgba(200,16,46,.08), 0 0 0 1px rgba(255,255,255,.04);">
+
+      <!-- Placeholder — shown until STREAMLIT_URL is set -->
+      <div id="app-placeholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;
+           height:600px;background:#0f1624;gap:20px;text-align:center;padding:40px;">
+        <img src="static/logo.png" alt="FieldVision"
+             style="width:72px;height:72px;object-fit:contain;opacity:.5;"
+             onerror="this.style.display='none'" />
+        <div style="font-size:1.05rem;font-weight:600;color:rgba(240,244,255,.55);">App URL not configured yet</div>
+        <div style="font-family:'Fira Code',monospace;font-size:.8rem;color:rgba(240,244,255,.3);
+             background:#172033;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:10px 18px;">
+          Set STREAMLIT_URL in index.html line 16
+        </div>
+      </div>
+
+      <!-- Iframe — injected by JS once URL is known -->
+      <iframe id="app-frame"
+              src=""
+              style="display:none;width:100%;height:900px;border:none;background:#070b14;"
+              allow="camera; microphone; clipboard-write"
+              title="FieldVision App">
+      </iframe>
+    </div>
+
+    <!-- Open-in-tab fallback -->
+    <div id="app-external-link" style="display:none;text-align:center;margin-top:20px;">
+      <a id="app-tab-link" href="#" target="_blank"
+         style="font-size:.82rem;color:rgba(240,244,255,.38);text-decoration:none;
+                transition:color .2s ease;cursor:pointer;"
+         onmouseover="this.style.color='rgba(240,244,255,.7)'"
+         onmouseout="this.style.color='rgba(240,244,255,.38)'">
+        Open in full tab &nbsp;↗
+      </a>
+    </div>
+
   </div>
 </section>
 
@@ -855,6 +918,28 @@
       navbar.style.boxShadow = 'none';
     }
   }, { passive: true });
+
+  // ── Wire Streamlit embed ───────────────────────────────────────────────
+  (function () {
+    const url = (typeof STREAMLIT_URL !== 'undefined') ? STREAMLIT_URL.trim() : '';
+    const placeholder = document.getElementById('app-placeholder');
+    const frame       = document.getElementById('app-frame');
+    const extBlock    = document.getElementById('app-external-link');
+    const extLink     = document.getElementById('app-tab-link');
+
+    if (url) {
+      // Hide placeholder, show iframe
+      if (placeholder) placeholder.style.display = 'none';
+      if (frame) {
+        frame.src = url + '?embed=true&embed_options=hide_toolbar,hide_footer,hide_loading_screen';
+        frame.style.display = 'block';
+      }
+      // Show "Open in full tab" link
+      if (extBlock) extBlock.style.display = 'block';
+      if (extLink)  extLink.href = url;
+    }
+    // If url is empty, placeholder stays visible (default state)
+  })();
 </script>
 
 <style>
