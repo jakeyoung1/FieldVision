@@ -1382,7 +1382,7 @@ window.addEventListener('scroll', () => {
   els.forEach(el => cObs.observe(el));
 })();
 
-// ── 3D card tilt ──────────────────────────────────────────────────────────
+// ── Card spotlight glow (no tilt) ─────────────────────────────────────────
 (function () {
   if (window.matchMedia('(hover: none)').matches) return;
   document.querySelectorAll('.card').forEach(card => {
@@ -1392,15 +1392,10 @@ window.addEventListener('scroll', () => {
       const r = card.getBoundingClientRect();
       const x = e.clientX - r.left;
       const y = e.clientY - r.top;
-      const cx = r.width  / 2;
-      const cy = r.height / 2;
-      const tiltX = ((y - cy) / cy) * -7;
-      const tiltY = ((x - cx) / cx) *  7;
 
-      card.style.transform  = `perspective(900px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateY(-3px)`;
-      card.style.transition = 'transform .05s ease, box-shadow .2s ease, border-color .2s ease';
-      card.style.boxShadow  = '0 18px 52px rgba(200,16,46,.14)';
+      card.style.boxShadow   = '0 18px 52px rgba(200,16,46,.14)';
       card.style.borderColor = 'rgba(200,16,46,.3)';
+      card.style.transition  = 'box-shadow .2s ease, border-color .2s ease';
 
       if (spot) {
         spot.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(255,255,255,.09), transparent 65%)`;
@@ -1408,8 +1403,6 @@ window.addEventListener('scroll', () => {
     }, { passive: true });
 
     card.addEventListener('mouseleave', () => {
-      card.style.transform   = 'perspective(900px) rotateX(0) rotateY(0) translateY(0)';
-      card.style.transition  = 'transform .4s ease, box-shadow .2s ease, border-color .2s ease';
       card.style.boxShadow   = '';
       card.style.borderColor = '';
       if (spot) spot.style.background = '';
