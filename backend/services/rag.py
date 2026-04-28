@@ -1,50 +1,57 @@
-"""RAG service — FAISS index + sentence-transformer embeddings."""
-import os
-import pickle
+"""RAG service — TF-IDF retrieval from Branch Rickey CSV (no PyTorch required)."""
 from functools import lru_cache
 from pathlib import Path
 
-import faiss
 import numpy as np
-from sentence_transformers import SentenceTransformer
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 BASE_DIR = Path(__file__).resolve().parents[2]
-DATA_DIR = BASE_DIR / "data"
-
-EMBED_MODEL = "all-MiniLM-L6-v2"
-INDEX_PATH  = DATA_DIR / "rickey_index.faiss"
-META_PATH   = DATA_DIR / "rickey_meta.pkl"
-TOP_K       = 5
-
-
-@lru_cache(maxsize=1)
-def _load_model() -> SentenceTransformer:
-    return SentenceTransformer(EMBED_MODEL)
+DATA_DIR  = BASE_DIR / "data"
+CSV_PATH  = DATA_DIR / "branch-rickey-scouting.csv"
+TOP_K     = 5
 
 
 @lru_cache(maxsize=1)
 def _load_index():
-    index = faiss.read_index(str(INDEX_PATH))
-    with open(META_PATH, "rb") as f:
-        meta = pickle.load(f)
-    return index, meta
+    """Load CSV, build TF-IDF matrix (cached after first call)."""
+    df = pd.read_csv(CSV_PATH)
+
+    # Keep rows with actual transcription text
+    df = df[df["Transcription"].notna() & (df["Transcription"].str.strip() != "")]
+    df = df.reset_index(drop=True)
+
+    texts = df["Transcription"].tolist()
+    sources = df["Item"].fillna("Rickey Doc").tolist()
+
+    vectorizer = TfidfVectorizer(
+        max_features=20_000,
+        ngram_range=(1, 2),
+        sublinear_tf=True,
+    )
+    matrix = vectorizer.fit_transform(texts)
+
+    return vectorizer, matrix, texts, sources
 
 
 def retrieve(query: str, k: int = TOP_K) -> list[dict]:
     """Return top-k relevant Rickey document chunks for a query."""
-    model = _load_model()
-    index, meta = _load_index()
+    vectorizer, matrix, texts, sources = _load_index()
 
-    vec = model.encode([query], normalize_embeddings=True).astype("float32")
-    distances, indices = index.search(vec, k)
+    q_vec = vectorizer.transform([query])
+    scores = cosine_similarity(q_vec, matrix).flatten()
+    top_indices = np.argsort(scores)[::-1][:k]
 
     results = []
-    for dist, idx in zip(distances[0], indices[0]):
-        if idx == -1:
+    for idx in top_indices:
+        if scores[idx] == 0:
             continue
-        entry = meta[idx].copy()
-        entry["score"] = float(dist)
-        results.append(entry)
+        results.append({
+            "source": sources[idx],
+            "text": texts[idx][:600],   # cap chunk length
+            "score": float(scores[idx]),
+        })
     return results
 
 
@@ -55,6 +62,6 @@ def context_block(query: str, k: int = TOP_K) -> str:
         return ""
     lines = ["--- Branch Rickey Reference ---"]
     for h in hits:
-        lines.append(f"[{h.get('source', 'doc')}] {h.get('text', '')}")
+        lines.append(f"[{h['source']}] {h['text']}")
     lines.append("--- End Reference ---")
     return "\n".join(lines)
