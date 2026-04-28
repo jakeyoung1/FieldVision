@@ -779,7 +779,7 @@
         <div class="card" style="padding:28px;min-height:340px;">
           <div class="card-spot"></div>
           <div id="fv-trackman-result" style="color:rgba(240,244,255,.3);font-size:.88rem;
-               display:flex;align-items:center;justify-content:center;height:300px;text-align:center;">
+               display:flex;align-items:center;justify-content:center;min-height:300px;text-align:center;">
             Trackman analysis will appear here
           </div>
         </div>
@@ -1722,8 +1722,13 @@ document.querySelectorAll('[data-topline]').forEach(line => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Trackman analysis failed');
 
-      document.getElementById('fv-trackman-result').innerHTML = `
-        <div style="max-height:460px;overflow-y:auto;">
+      const resultEl = document.getElementById('fv-trackman-result');
+      resultEl.style.display = 'block';
+      resultEl.style.alignItems = '';
+      resultEl.style.justifyContent = '';
+      resultEl.style.textAlign = '';
+      resultEl.innerHTML = `
+        <div style="max-height:460px;overflow-y:auto;padding-right:4px;">
           <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
             <div style="background:#172033;border-radius:8px;padding:10px 16px;text-align:center;min-width:80px;">
               <div style="font-size:1.4rem;font-weight:800;color:#a5b4fc;">${data.pitchers}</div>

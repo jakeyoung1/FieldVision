@@ -114,9 +114,10 @@ INSIGHTS:
 def interpret_pitch_metrics(summary: str, focus: str = "") -> str:
     """Translate Trackman pitch metrics into plain-language coach explanation."""
     focus_line = f"Focus area: {focus}" if focus else ""
-    prompt = f"""You are a college pitching coach explaining Trackman data to your staff.
-Translate the following metrics into plain English — no jargon, practical takeaways only.
-For each pitcher mentioned, give 2-3 sentences. End with one overall team takeaway.
+    prompt = f"""You are a baseball analyst presenting Trackman pitch data objectively.
+This data may include pitchers from multiple teams. Describe each pitcher's metrics factually —
+velocity, spin, pitch mix, tendencies. Use neutral third-person language (e.g. "Smith throws..."
+not "our guy" or "we need"). 2-3 sentences per pitcher. End with one cross-dataset observation.
 {focus_line}
 
 DATA SUMMARY:
