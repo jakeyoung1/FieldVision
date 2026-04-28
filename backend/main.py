@@ -1,5 +1,13 @@
 """FieldVision — FastAPI backend entry point."""
+import os
 from pathlib import Path
+
+# Load .env if present (local dev)
+try:
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).parent.parent / ".env")
+except ImportError:
+    pass
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
