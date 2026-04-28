@@ -38,8 +38,15 @@ app.include_router(trackman.router, prefix="/api")
 
 
 @app.get("/api/health")
+@app.head("/api/health")
 def health():
     return {"status": "ok", "version": "2.0.0"}
+
+
+@app.head("/")
+def health_root():
+    """HEAD support for uptime monitors hitting the root."""
+    return {"status": "ok"}
 
 
 # ── Static frontend ───────────────────────────────────────────────────────────
