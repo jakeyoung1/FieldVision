@@ -1472,6 +1472,7 @@ document.querySelectorAll('[data-topline]').forEach(line => {
   let selectedFiles  = [];
   let trackmanFile   = null;
   let currentReport  = '';
+  let sessionReports = [];   // accumulates all reports this session for chat context
   let chatHistory    = [];
   let talentPool     = [];   // [{label, profile, report}]
 
@@ -1544,6 +1545,7 @@ document.querySelectorAll('[data-topline]').forEach(line => {
     showReportLoading();
     chatHistory = [];
     currentReport = '';
+    // Note: sessionReports is NOT cleared — it accumulates across uploads
 
     try {
       const fd = new FormData();
@@ -1616,21 +1618,26 @@ document.querySelectorAll('[data-topline]').forEach(line => {
       return;
     }
 
-    // Use first result for chat context
+    // Update current report and accumulate into session memory
     currentReport = results.map(r => r.report).join('\n\n---\n\n');
+    sessionReports.push(...results.map(r => `[${r.label}]\n${r.report}`));
 
     const html = results.map(r => {
       const p = r.profile || {};
       const grade = p.grade || '?';
+      const reportHtml = markdownToHtml(r.report);
       return `
-        <div style="margin-bottom:24px;">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <div style="margin-bottom:24px;" data-report-label="${p.name || r.label}" data-report-html="${encodeURIComponent(reportHtml)}" data-report-text="${encodeURIComponent(r.report)}">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
             <span style="font-weight:700;font-size:.95rem;">${p.name || r.label}</span>
             <span class="fv-grade-badge fv-grade-${grade}">${grade}</span>
             ${p.position ? `<span style="font-size:.75rem;color:rgba(240,244,255,.4);">${p.position}</span>` : ''}
+            <button onclick="exportReportPDF(this)" style="margin-left:auto;padding:4px 12px;border-radius:5px;
+              background:rgba(200,16,46,.12);border:1px solid rgba(200,16,46,.3);color:#C8102E;
+              font-size:.72rem;font-weight:600;cursor:pointer;">↓ Export PDF</button>
           </div>
           ${p.summary ? `<p style="font-size:.85rem;color:rgba(240,244,255,.55);margin-bottom:10px;line-height:1.6;">${p.summary}</p>` : ''}
-          <div class="fv-report-md">${markdownToHtml(r.report)}</div>
+          <div class="fv-report-md">${reportHtml}</div>
         </div>`;
     }).join('<hr style="border:none;border-top:1px solid rgba(255,255,255,.07);margin:20px 0;">');
 
@@ -1639,6 +1646,37 @@ document.querySelectorAll('[data-topline]').forEach(line => {
 
     document.getElementById('fv-chat-panel').style.display = '';
   }
+
+  // ── PDF Export ───────────────────────────────────────────────────────────
+  window.exportReportPDF = function (btn) {
+    const card = btn.closest('[data-report-label]');
+    const label = card.dataset.reportLabel;
+    const bodyHtml = decodeURIComponent(card.dataset.reportHtml);
+
+    const win = window.open('', '_blank');
+    win.document.write(`<!DOCTYPE html><html><head>
+      <meta charset="UTF-8">
+      <title>FieldVision — ${label}</title>
+      <style>
+        body { font-family: Georgia, serif; max-width: 720px; margin: 40px auto; padding: 0 24px; color: #111; line-height: 1.7; }
+        h1 { font-size: 1.5rem; border-bottom: 2px solid #C8102E; padding-bottom: 8px; margin-bottom: 4px; }
+        .meta { font-size: .85rem; color: #555; margin-bottom: 28px; }
+        h2 { font-size: 1.1rem; color: #002147; margin-top: 24px; }
+        h3 { font-size: 1rem; color: #002147; }
+        p, li { font-size: .95rem; }
+        ul { padding-left: 20px; }
+        hr { border: none; border-top: 1px solid #ddd; margin: 20px 0; }
+        @media print { body { margin: 20px; } }
+      </style>
+    </head><body>
+      <h1>FieldVision Scouting Report</h1>
+      <div class="meta">Player: <strong>${label}</strong> &nbsp;|&nbsp; Generated: ${new Date().toLocaleDateString()}</div>
+      ${bodyHtml}
+    </body></html>`);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); }, 400);
+  };
 
   // ── Chat ─────────────────────────────────────────────────────────────────
   window.sendChat = async function () {
@@ -1656,7 +1694,13 @@ document.querySelectorAll('[data-topline]').forEach(line => {
       const res  = await fetch(`${API_BASE}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ history: chatHistory, context: currentReport }),
+        body: JSON.stringify({
+          history: chatHistory,
+          context: currentReport,
+          session_context: sessionReports.length > 1
+            ? `Prior uploads this session:\n${sessionReports.slice(0, -1).join('\n\n---\n\n')}`
+            : ''
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Chat failed');
