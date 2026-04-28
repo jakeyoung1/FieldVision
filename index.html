@@ -613,60 +613,218 @@
 </section>
 
 
-<section id="app" style="padding:100px 24px 60px;position:relative;">
+<section id="app" style="padding:100px 24px 80px;position:relative;">
   <div class="section-topline" data-topline></div>
-  <div style="max-width:1200px;margin:0 auto;">
+  <div style="max-width:1100px;margin:0 auto;">
 
-    <div class="reveal" style="text-align:center;margin-bottom:40px;">
-      <div class="eyebrow">Live App</div>
+    <div class="reveal" style="text-align:center;margin-bottom:48px;">
+      <div class="eyebrow">Live Intelligence</div>
       <h2 style="font-size:clamp(2rem,4vw,3rem);font-weight:800;letter-spacing:-.03em;margin-bottom:14px;">
-        FieldVision Intelligence
+        FieldVision App
       </h2>
-      <p style="font-size:1rem;color:rgba(240,244,255,.5);max-width:480px;margin:0 auto;line-height:1.75;">
-        Upload a scouting note and get an AI-generated report — right here, no new tab.
+      <p style="font-size:1rem;color:rgba(240,244,255,.5);max-width:500px;margin:0 auto;line-height:1.75;">
+        Upload scouting notes, analyze Trackman data, compare prospects — all without leaving the page.
       </p>
     </div>
 
-    <!-- App frame container -->
-    <div class="reveal" style="transition-delay:.1s;position:relative;border-radius:16px;overflow:hidden;
-         border:1px solid rgba(200,16,46,.22);
-         box-shadow:0 0 60px rgba(200,16,46,.08), 0 0 0 1px rgba(255,255,255,.04);">
+    <!-- ── Tab Bar ─────────────────────────────────────────────────── -->
+    <div class="reveal" style="transition-delay:.05s;display:flex;gap:8px;margin-bottom:24px;border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:0;">
+      <button class="fv-tab active" data-tab="scouting" onclick="switchTab('scouting')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Scouting Notes
+      </button>
+      <button class="fv-tab" data-tab="trackman" onclick="switchTab('trackman')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Trackman
+      </button>
+      <button class="fv-tab" data-tab="players" onclick="switchTab('players')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Players
+      </button>
+    </div>
 
-      <!-- Placeholder -->
-      <div id="app-placeholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;
-           height:600px;background:#0f1624;gap:20px;text-align:center;padding:40px;">
-        <img src="static/logo.png" alt="FieldVision"
-             style="width:72px;height:72px;object-fit:contain;opacity:.5;"
-             onerror="this.style.display='none'" />
-        <div style="font-size:1.05rem;font-weight:600;color:rgba(240,244,255,.55);">App URL not configured yet</div>
-        <div style="font-family:'Fira Code',monospace;font-size:.8rem;color:rgba(240,244,255,.3);
-             background:#172033;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:10px 18px;">
-          Set STREAMLIT_URL in index.html line 16
+    <!-- ── Scouting Tab ───────────────────────────────────────────── -->
+    <div id="tab-scouting" class="fv-tab-panel reveal" style="transition-delay:.1s;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;" class="fv-app-grid">
+
+        <!-- Upload panel -->
+        <div class="card" style="padding:28px;">
+          <div class="card-spot"></div>
+          <div style="font-weight:700;font-size:1rem;margin-bottom:6px;">Upload Scouting Files</div>
+          <div style="color:rgba(240,244,255,.42);font-size:.82rem;margin-bottom:20px;">PDF or text files. Multiple files = batch mode.</div>
+
+          <label id="fv-drop-zone" style="display:flex;flex-direction:column;align-items:center;justify-content:center;
+                 gap:12px;border:2px dashed rgba(200,16,46,.3);border-radius:12px;padding:36px 20px;
+                 cursor:pointer;transition:border-color .2s,background .2s;text-align:center;"
+                 ondragover="event.preventDefault();this.style.borderColor='#C8102E';this.style.background='rgba(200,16,46,.06)'"
+                 ondragleave="this.style.borderColor='rgba(200,16,46,.3)';this.style.background=''"
+                 ondrop="handleDrop(event)">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(200,16,46,.6)" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <div style="font-size:.9rem;color:rgba(240,244,255,.55);">Drop files here or <span style="color:#C8102E;font-weight:600;">browse</span></div>
+            <div style="font-size:.75rem;color:rgba(240,244,255,.28);">PDF · TXT · MD</div>
+            <input id="fv-file-input" type="file" multiple accept=".pdf,.txt,.md" style="display:none"
+                   onchange="handleFileSelect(this.files)">
+          </label>
+
+          <div id="fv-file-list" style="margin-top:16px;display:flex;flex-direction:column;gap:6px;"></div>
+
+          <button id="fv-analyze-btn" onclick="runAnalysis()"
+                  style="margin-top:20px;width:100%;padding:12px;border-radius:10px;
+                         background:#C8102E;color:#fff;font-weight:700;font-size:.9rem;
+                         border:none;cursor:pointer;transition:opacity .2s;display:flex;
+                         align-items:center;justify-content:center;gap:8px;"
+                  disabled>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Analyze
+          </button>
+        </div>
+
+        <!-- Report panel -->
+        <div class="card" style="padding:28px;min-height:340px;">
+          <div class="card-spot"></div>
+          <div id="fv-report-area" style="height:100%;">
+            <div id="fv-report-empty" style="height:300px;display:flex;flex-direction:column;
+                 align-items:center;justify-content:center;gap:12px;text-align:center;">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(200,16,46,.3)" stroke-width="1.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              <div style="color:rgba(240,244,255,.3);font-size:.88rem;">Report will appear here</div>
+            </div>
+            <div id="fv-report-content" style="display:none;"></div>
+          </div>
         </div>
       </div>
 
-      <!-- Iframe -->
-      <iframe id="app-frame"
-              src=""
-              style="display:none;width:100%;height:900px;border:none;background:#070b14;"
-              allow="camera; microphone; clipboard-write"
-              title="FieldVision App">
-      </iframe>
+      <!-- Chat panel (shown after analysis) -->
+      <div id="fv-chat-panel" style="display:none;margin-top:24px;" class="card">
+        <div class="card-spot"></div>
+        <div style="padding:24px 28px;border-bottom:1px solid rgba(255,255,255,.06);font-weight:600;font-size:.9rem;">
+          Follow-up Chat
+        </div>
+        <div id="fv-chat-messages" style="padding:20px 28px;max-height:320px;overflow-y:auto;
+             display:flex;flex-direction:column;gap:12px;"></div>
+        <div style="padding:16px 20px;border-top:1px solid rgba(255,255,255,.06);display:flex;gap:10px;">
+          <input id="fv-chat-input" type="text" placeholder="Ask a follow-up question…"
+                 style="flex:1;padding:10px 16px;border-radius:8px;background:#172033;
+                        border:1px solid rgba(255,255,255,.1);color:#f0f4ff;font-size:.88rem;outline:none;"
+                 onkeydown="if(event.key==='Enter')sendChat()"
+                 onfocus="this.style.borderColor='rgba(200,16,46,.5)'"
+                 onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+          <button onclick="sendChat()"
+                  style="padding:10px 18px;border-radius:8px;background:#C8102E;color:#fff;
+                         font-weight:600;font-size:.85rem;border:none;cursor:pointer;white-space:nowrap;">
+            Send
+          </button>
+        </div>
+      </div>
     </div>
 
-    <!-- Open-in-tab fallback -->
-    <div id="app-external-link" style="display:none;text-align:center;margin-top:20px;">
-      <a id="app-tab-link" href="#" target="_blank"
-         style="font-size:.82rem;color:rgba(240,244,255,.38);text-decoration:none;
-                transition:color .2s ease;"
-         onmouseover="this.style.color='rgba(240,244,255,.7)'"
-         onmouseout="this.style.color='rgba(240,244,255,.38)'">
-        Open in full tab &nbsp;↗
-      </a>
+    <!-- ── Trackman Tab ───────────────────────────────────────────── -->
+    <div id="tab-trackman" class="fv-tab-panel" style="display:none;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;" class="fv-app-grid">
+        <div class="card" style="padding:28px;">
+          <div class="card-spot"></div>
+          <div style="font-weight:700;font-size:1rem;margin-bottom:6px;">Upload Trackman CSV</div>
+          <div style="color:rgba(240,244,255,.42);font-size:.82rem;margin-bottom:20px;">Export from Trackman and drop it here.</div>
+
+          <label style="display:flex;flex-direction:column;align-items:center;justify-content:center;
+                 gap:12px;border:2px dashed rgba(165,180,252,.25);border-radius:12px;padding:36px 20px;
+                 cursor:pointer;transition:border-color .2s,background .2s;text-align:center;"
+                 ondragover="event.preventDefault();this.style.borderColor='#a5b4fc'"
+                 ondragleave="this.style.borderColor='rgba(165,180,252,.25)'"
+                 ondrop="handleTrackmanDrop(event)">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(165,180,252,.5)" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            <div style="font-size:.9rem;color:rgba(240,244,255,.55);">Drop CSV or <span style="color:#a5b4fc;font-weight:600;">browse</span></div>
+            <input id="fv-trackman-input" type="file" accept=".csv" style="display:none"
+                   onchange="handleTrackmanSelect(this.files[0])">
+          </label>
+
+          <input id="fv-trackman-focus" type="text" placeholder="Focus area (optional)…"
+                 style="margin-top:14px;width:100%;padding:10px 14px;border-radius:8px;
+                        background:#172033;border:1px solid rgba(255,255,255,.1);
+                        color:#f0f4ff;font-size:.85rem;outline:none;box-sizing:border-box;"
+                 onfocus="this.style.borderColor='rgba(165,180,252,.5)'"
+                 onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+
+          <button id="fv-trackman-btn" onclick="runTrackman()"
+                  style="margin-top:14px;width:100%;padding:12px;border-radius:10px;
+                         background:#6366f1;color:#fff;font-weight:700;font-size:.9rem;
+                         border:none;cursor:pointer;transition:opacity .2s;" disabled>
+            Analyze Pitching Data
+          </button>
+        </div>
+
+        <div class="card" style="padding:28px;min-height:340px;">
+          <div class="card-spot"></div>
+          <div id="fv-trackman-result" style="color:rgba(240,244,255,.3);font-size:.88rem;
+               display:flex;align-items:center;justify-content:center;height:300px;text-align:center;">
+            Trackman analysis will appear here
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Players Tab ───────────────────────────────────────────── -->
+    <div id="tab-players" class="fv-tab-panel" style="display:none;">
+      <div id="fv-players-empty" style="text-align:center;padding:80px 20px;color:rgba(240,244,255,.3);font-size:.9rem;">
+        Analyze scouting notes first to build your talent pool.
+      </div>
+      <div id="fv-players-content" style="display:none;">
+        <!-- Filters -->
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
+          <input id="fv-filter-text" type="text" placeholder="Search players…"
+                 style="padding:9px 14px;border-radius:8px;background:#0f1624;
+                        border:1px solid rgba(255,255,255,.1);color:#f0f4ff;font-size:.85rem;
+                        outline:none;flex:1;min-width:180px;"
+                 oninput="filterPlayers()" />
+          <select id="fv-filter-grade" onchange="filterPlayers()"
+                  style="padding:9px 14px;border-radius:8px;background:#0f1624;
+                         border:1px solid rgba(255,255,255,.1);color:#f0f4ff;font-size:.85rem;outline:none;">
+            <option value="">All Grades</option>
+            <option value="A">A — Elite</option>
+            <option value="B">B — Strong</option>
+            <option value="C">C — Developmental</option>
+            <option value="D">D — Needs Work</option>
+          </select>
+        </div>
+        <div id="fv-player-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;"></div>
+      </div>
     </div>
 
   </div>
 </section>
+
+<style>
+/* ── App UI styles ─────────────────────────────────────────────────────── */
+.fv-tab {
+  display: flex; align-items: center; gap: 7px;
+  padding: 10px 18px; border-radius: 8px 8px 0 0;
+  border: none; background: transparent;
+  color: rgba(240,244,255,.45); font-size: .85rem; font-weight: 500;
+  cursor: pointer; transition: color .2s, background .2s;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.fv-tab:hover { color: rgba(240,244,255,.8); }
+.fv-tab.active { color: #f0f4ff; border-bottom-color: #C8102E; background: rgba(200,16,46,.06); }
+
+.fv-chat-bubble { padding: 10px 14px; border-radius: 10px; max-width: 85%; font-size: .87rem; line-height: 1.6; }
+.fv-chat-user { background: rgba(200,16,46,.15); border: 1px solid rgba(200,16,46,.2); align-self: flex-end; color: #f0f4ff; }
+.fv-chat-assistant { background: #0f1624; border: 1px solid rgba(255,255,255,.08); align-self: flex-start; color: rgba(240,244,255,.88); }
+
+.fv-report-md h2 { font-size: 1rem; font-weight: 700; color: #f0f4ff; margin: 18px 0 6px; }
+.fv-report-md h3 { font-size: .9rem; font-weight: 600; color: rgba(240,244,255,.8); margin: 14px 0 4px; }
+.fv-report-md p  { font-size: .87rem; color: rgba(240,244,255,.65); line-height: 1.7; margin-bottom: 8px; }
+.fv-report-md li { font-size: .87rem; color: rgba(240,244,255,.65); line-height: 1.7; margin-left: 18px; list-style: disc; }
+.fv-report-md strong { color: #f0f4ff; }
+
+.fv-grade-badge { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: .7rem; font-weight: 700; }
+.fv-grade-A { background: rgba(34,197,94,.15); color: #4ade80; border: 1px solid rgba(34,197,94,.3); }
+.fv-grade-B { background: rgba(99,102,241,.15); color: #a5b4fc; border: 1px solid rgba(99,102,241,.3); }
+.fv-grade-C { background: rgba(245,158,11,.12); color: #fbbf24; border: 1px solid rgba(245,158,11,.25); }
+.fv-grade-D { background: rgba(200,16,46,.12); color: #f07080; border: 1px solid rgba(200,16,46,.25); }
+.fv-grade-F { background: rgba(100,100,100,.15); color: #9ca3af; border: 1px solid rgba(100,100,100,.25); }
+
+@media (max-width: 640px) { .fv-app-grid { grid-template-columns: 1fr !important; } }
+</style>
 
 
 <!-- ════════════════════════════════════════════════════════════════════════
@@ -1280,6 +1438,346 @@ document.querySelectorAll('[data-topline]').forEach(line => {
     `;
     container.appendChild(p);
   }
+})();
+</script>
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     FIELDVISION APP ENGINE
+═════════════════════════════════════════════════════════════════════════ -->
+<script>
+(function () {
+  // ── Config ──────────────────────────────────────────────────────────────
+  const API_BASE = window.FV_API_BASE || '';  // set by server; empty = same origin
+
+  // ── State ───────────────────────────────────────────────────────────────
+  let selectedFiles  = [];
+  let trackmanFile   = null;
+  let currentReport  = '';
+  let chatHistory    = [];
+  let talentPool     = [];   // [{label, profile, report}]
+
+  // ── Tab switching ────────────────────────────────────────────────────────
+  window.switchTab = function (name) {
+    document.querySelectorAll('.fv-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+    document.querySelectorAll('.fv-tab-panel').forEach(p => p.style.display = 'none');
+    const panel = document.getElementById('tab-' + name);
+    if (panel) panel.style.display = '';
+    if (name === 'players') renderPlayers();
+  };
+
+  // ── File drop / select ──────────────────────────────────────────────────
+  window.handleDrop = function (e) {
+    e.preventDefault();
+    const zone = document.getElementById('fv-drop-zone');
+    zone.style.borderColor = 'rgba(200,16,46,.3)';
+    zone.style.background  = '';
+    handleFileSelect(e.dataTransfer.files);
+  };
+
+  window.handleFileSelect = function (fileList) {
+    selectedFiles = Array.from(fileList);
+    renderFileList();
+    document.getElementById('fv-analyze-btn').disabled = selectedFiles.length === 0;
+  };
+
+  document.getElementById('fv-drop-zone').addEventListener('click', () => {
+    document.getElementById('fv-file-input').click();
+  });
+
+  function renderFileList () {
+    const el = document.getElementById('fv-file-list');
+    el.innerHTML = selectedFiles.map((f, i) => `
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;
+           background:#172033;border-radius:7px;font-size:.8rem;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#C8102E" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span style="flex:1;color:rgba(240,244,255,.7);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${f.name}</span>
+        <span style="color:rgba(240,244,255,.3);">${(f.size/1024).toFixed(0)}KB</span>
+        <span onclick="removeFile(${i})" style="cursor:pointer;color:rgba(240,244,255,.3);padding:0 2px;">✕</span>
+      </div>
+    `).join('');
+  }
+
+  window.removeFile = function (i) {
+    selectedFiles.splice(i, 1);
+    renderFileList();
+    document.getElementById('fv-analyze-btn').disabled = selectedFiles.length === 0;
+  };
+
+  // ── Run analysis ─────────────────────────────────────────────────────────
+  window.runAnalysis = async function () {
+    if (!selectedFiles.length) return;
+    const btn = document.getElementById('fv-analyze-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin .8s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Analyzing…';
+
+    showReportLoading();
+    chatHistory = [];
+    currentReport = '';
+
+    try {
+      const fd = new FormData();
+      selectedFiles.forEach(f => fd.append('files_upload', f));
+      fd.append('batch_mode', selectedFiles.length > 1 ? 'true' : 'false');
+
+      const res  = await fetch(`${API_BASE}/api/analyze`, { method: 'POST', body: fd });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.detail || 'Analysis failed');
+
+      renderReports(data.results);
+
+      // Add to talent pool
+      data.results.forEach(r => {
+        if (!talentPool.find(p => p.label === r.label)) {
+          talentPool.push(r);
+        }
+      });
+
+    } catch (err) {
+      showReportError(err.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Analyze';
+    }
+  };
+
+  function showReportLoading () {
+    document.getElementById('fv-report-empty').style.display   = 'none';
+    document.getElementById('fv-report-content').style.display = '';
+    document.getElementById('fv-report-content').innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
+           height:260px;gap:16px;">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#C8102E" stroke-width="2"
+             style="animation:spin .9s linear infinite">
+          <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+        </svg>
+        <div style="color:rgba(240,244,255,.45);font-size:.88rem;">Running analysis…</div>
+      </div>`;
+  }
+
+  function showReportError (msg) {
+    document.getElementById('fv-report-content').innerHTML = `
+      <div style="padding:20px;color:#f07080;font-size:.88rem;">Error: ${msg}</div>`;
+  }
+
+  function renderReports (results) {
+    if (!results.length) {
+      document.getElementById('fv-report-content').innerHTML =
+        '<div style="padding:20px;color:rgba(240,244,255,.4);font-size:.88rem;">No results returned.</div>';
+      return;
+    }
+
+    // Use first result for chat context
+    currentReport = results.map(r => r.report).join('\n\n---\n\n');
+
+    const html = results.map(r => {
+      const p = r.profile || {};
+      const grade = p.grade || '?';
+      return `
+        <div style="margin-bottom:24px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+            <span style="font-weight:700;font-size:.95rem;">${p.name || r.label}</span>
+            <span class="fv-grade-badge fv-grade-${grade}">${grade}</span>
+            ${p.position ? `<span style="font-size:.75rem;color:rgba(240,244,255,.4);">${p.position}</span>` : ''}
+          </div>
+          ${p.summary ? `<p style="font-size:.85rem;color:rgba(240,244,255,.55);margin-bottom:10px;line-height:1.6;">${p.summary}</p>` : ''}
+          <div class="fv-report-md">${markdownToHtml(r.report)}</div>
+        </div>`;
+    }).join('<hr style="border:none;border-top:1px solid rgba(255,255,255,.07);margin:20px 0;">');
+
+    document.getElementById('fv-report-content').innerHTML =
+      `<div style="max-height:480px;overflow-y:auto;padding-right:4px;">${html}</div>`;
+
+    document.getElementById('fv-chat-panel').style.display = '';
+  }
+
+  // ── Chat ─────────────────────────────────────────────────────────────────
+  window.sendChat = async function () {
+    const input = document.getElementById('fv-chat-input');
+    const text  = input.value.trim();
+    if (!text) return;
+    input.value = '';
+
+    chatHistory.push({ role: 'user', content: text });
+    renderChatMessage('user', text);
+
+    const thinkingEl = appendChatThinking();
+
+    try {
+      const res  = await fetch(`${API_BASE}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ history: chatHistory, context: currentReport }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Chat failed');
+
+      thinkingEl.remove();
+      chatHistory.push({ role: 'assistant', content: data.reply });
+      renderChatMessage('assistant', data.reply);
+    } catch (err) {
+      thinkingEl.remove();
+      renderChatMessage('assistant', `Error: ${err.message}`);
+    }
+  };
+
+  function renderChatMessage (role, text) {
+    const msgs = document.getElementById('fv-chat-messages');
+    const div  = document.createElement('div');
+    div.className = `fv-chat-bubble fv-chat-${role}`;
+    div.innerHTML = markdownToHtml(text);
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function appendChatThinking () {
+    const msgs = document.getElementById('fv-chat-messages');
+    const div  = document.createElement('div');
+    div.className = 'fv-chat-bubble fv-chat-assistant';
+    div.innerHTML = '<span style="opacity:.5">Thinking…</span>';
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+    return div;
+  }
+
+  // ── Trackman ─────────────────────────────────────────────────────────────
+  window.handleTrackmanDrop = function (e) {
+    e.preventDefault();
+    handleTrackmanSelect(e.dataTransfer.files[0]);
+  };
+
+  window.handleTrackmanSelect = function (file) {
+    if (!file) return;
+    trackmanFile = file;
+    document.getElementById('fv-trackman-btn').disabled = false;
+    document.getElementById('fv-trackman-result').innerHTML =
+      `<div style="color:rgba(240,244,255,.55);font-size:.88rem;">${file.name} ready — click Analyze.</div>`;
+  };
+
+  document.getElementById('fv-trackman-input') && (() => {
+    document.querySelector('label[ondragover*="trackman"]')?.addEventListener('click', () => {
+      document.getElementById('fv-trackman-input').click();
+    });
+  })();
+
+  window.runTrackman = async function () {
+    if (!trackmanFile) return;
+    const btn = document.getElementById('fv-trackman-btn');
+    btn.disabled = true;
+    btn.textContent = 'Analyzing…';
+
+    document.getElementById('fv-trackman-result').innerHTML =
+      '<div style="color:rgba(240,244,255,.45);font-size:.88rem;text-align:center;padding:40px;">Processing…</div>';
+
+    try {
+      const fd = new FormData();
+      fd.append('file', trackmanFile);
+      const focus = document.getElementById('fv-trackman-focus').value;
+      if (focus) fd.append('focus', focus);
+
+      const res  = await fetch(`${API_BASE}/api/trackman`, { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Trackman analysis failed');
+
+      document.getElementById('fv-trackman-result').innerHTML = `
+        <div style="max-height:460px;overflow-y:auto;">
+          <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
+            <div style="background:#172033;border-radius:8px;padding:10px 16px;text-align:center;min-width:80px;">
+              <div style="font-size:1.4rem;font-weight:800;color:#a5b4fc;">${data.pitchers}</div>
+              <div style="font-size:.7rem;color:rgba(240,244,255,.4);text-transform:uppercase;letter-spacing:.08em;">Pitchers</div>
+            </div>
+            <div style="background:#172033;border-radius:8px;padding:10px 16px;text-align:center;min-width:80px;">
+              <div style="font-size:1.4rem;font-weight:800;color:#a5b4fc;">${data.rows}</div>
+              <div style="font-size:.7rem;color:rgba(240,244,255,.4);text-transform:uppercase;letter-spacing:.08em;">Pitches</div>
+            </div>
+          </div>
+          <div style="font-weight:700;font-size:.88rem;margin-bottom:8px;color:rgba(240,244,255,.7);">AI Interpretation</div>
+          <div class="fv-report-md" style="background:#0a1120;border-radius:10px;padding:16px 18px;">
+            ${markdownToHtml(data.interpretation)}
+          </div>
+        </div>`;
+    } catch (err) {
+      document.getElementById('fv-trackman-result').innerHTML =
+        `<div style="color:#f07080;font-size:.88rem;padding:20px;">Error: ${err.message}</div>`;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Analyze Pitching Data';
+    }
+  };
+
+  // ── Players tab ───────────────────────────────────────────────────────────
+  window.filterPlayers = function () {
+    renderPlayers();
+  };
+
+  function renderPlayers () {
+    if (!talentPool.length) {
+      document.getElementById('fv-players-empty').style.display   = '';
+      document.getElementById('fv-players-content').style.display = 'none';
+      return;
+    }
+    document.getElementById('fv-players-empty').style.display   = 'none';
+    document.getElementById('fv-players-content').style.display = '';
+
+    const filterText  = (document.getElementById('fv-filter-text')?.value || '').toLowerCase();
+    const filterGrade = document.getElementById('fv-filter-grade')?.value || '';
+
+    const filtered = talentPool.filter(p => {
+      const name = (p.profile?.name || p.label).toLowerCase();
+      const pos  = (p.profile?.position || '').toLowerCase();
+      if (filterText && !name.includes(filterText) && !pos.includes(filterText)) return false;
+      if (filterGrade && p.profile?.grade !== filterGrade) return false;
+      return true;
+    });
+
+    const container = document.getElementById('fv-player-cards');
+    container.innerHTML = filtered.map(p => {
+      const pr    = p.profile || {};
+      const grade = pr.grade || '?';
+      const strengths = (pr.strengths || []).slice(0, 3);
+      const concerns  = (pr.concerns  || []).slice(0, 2);
+      return `
+        <div class="card" style="padding:20px;cursor:default;">
+          <div class="card-spot"></div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+            <span style="font-weight:700;font-size:.92rem;flex:1;">${pr.name || p.label}</span>
+            <span class="fv-grade-badge fv-grade-${grade}">${grade}</span>
+          </div>
+          ${pr.position ? `<div style="font-size:.75rem;color:rgba(240,244,255,.4);margin-bottom:8px;">${pr.position}</div>` : ''}
+          ${pr.summary  ? `<p style="font-size:.82rem;color:rgba(240,244,255,.5);margin-bottom:10px;line-height:1.55;">${pr.summary}</p>` : ''}
+          ${strengths.length ? `<div style="font-size:.75rem;font-weight:600;color:#4ade80;margin-bottom:4px;">Strengths</div>
+            <ul style="margin:0 0 8px 14px;">${strengths.map(s=>`<li style="font-size:.78rem;color:rgba(240,244,255,.55);line-height:1.5;">${s}</li>`).join('')}</ul>` : ''}
+          ${concerns.length  ? `<div style="font-size:.75rem;font-weight:600;color:#f07080;margin-bottom:4px;">Concerns</div>
+            <ul style="margin:0 0 0 14px;">${concerns.map(c=>`<li style="font-size:.78rem;color:rgba(240,244,255,.55);line-height:1.5;">${c}</li>`).join('')}</ul>` : ''}
+        </div>`;
+    }).join('');
+
+    if (!filtered.length) {
+      container.innerHTML = '<div style="color:rgba(240,244,255,.35);font-size:.88rem;padding:20px;">No players match your filters.</div>';
+    }
+  }
+
+  // ── Markdown → HTML (minimal) ─────────────────────────────────────────────
+  function markdownToHtml (md) {
+    if (!md) return '';
+    return md
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/^## (.+)$/gm,  '<h2>$1</h2>')
+      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g,    '<em>$1</em>')
+      .replace(/^[-*] (.+)$/gm, '<li>$1</li>')
+      .replace(/(<li>.*<\/li>\n?)+/g, m => `<ul>${m}</ul>`)
+      .replace(/\n\n/g, '</p><p>')
+      .replace(/^(?!<[hup])/gm, '')
+      .replace(/^(.+)$/gm, (l) => l.match(/^<[hup]/) ? l : `<p>${l}</p>`)
+      .replace(/<p><\/p>/g, '');
+  }
+
+  // ── CSS spin keyframe ─────────────────────────────────────────────────────
+  const style = document.createElement('style');
+  style.textContent = '@keyframes spin { to { transform: rotate(360deg); } }';
+  document.head.appendChild(style);
 })();
 </script>
 
