@@ -499,9 +499,9 @@
 
     <!-- Links (desktop) -->
     <div style="display:flex;align-items:center;gap:32px;" class="hidden-mobile">
-      <a href="#pipeline" class="nav-link">Pipeline</a>
+      <a href="#app"       class="nav-link">App</a>
+      <a href="#pipeline"  class="nav-link">Pipeline</a>
       <a href="#features"  class="nav-link">Features</a>
-      <a href="#roadmap"   class="nav-link">Roadmap</a>
       <a href="#stack"     class="nav-link">Stack</a>
     </div>
 
@@ -609,6 +609,62 @@
   <!-- Scroll cue -->
   <div class="bounce-y" style="position:absolute;bottom:32px;left:50%;color:rgba(240,244,255,.2);z-index:10;">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+  </div>
+</section>
+
+
+<section id="app" style="padding:100px 24px 60px;position:relative;">
+  <div class="section-topline" data-topline></div>
+  <div style="max-width:1200px;margin:0 auto;">
+
+    <div class="reveal" style="text-align:center;margin-bottom:40px;">
+      <div class="eyebrow">Live App</div>
+      <h2 style="font-size:clamp(2rem,4vw,3rem);font-weight:800;letter-spacing:-.03em;margin-bottom:14px;">
+        FieldVision Intelligence
+      </h2>
+      <p style="font-size:1rem;color:rgba(240,244,255,.5);max-width:480px;margin:0 auto;line-height:1.75;">
+        Upload a scouting note and get an AI-generated report — right here, no new tab.
+      </p>
+    </div>
+
+    <!-- App frame container -->
+    <div class="reveal" style="transition-delay:.1s;position:relative;border-radius:16px;overflow:hidden;
+         border:1px solid rgba(200,16,46,.22);
+         box-shadow:0 0 60px rgba(200,16,46,.08), 0 0 0 1px rgba(255,255,255,.04);">
+
+      <!-- Placeholder -->
+      <div id="app-placeholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;
+           height:600px;background:#0f1624;gap:20px;text-align:center;padding:40px;">
+        <img src="static/logo.png" alt="FieldVision"
+             style="width:72px;height:72px;object-fit:contain;opacity:.5;"
+             onerror="this.style.display='none'" />
+        <div style="font-size:1.05rem;font-weight:600;color:rgba(240,244,255,.55);">App URL not configured yet</div>
+        <div style="font-family:'Fira Code',monospace;font-size:.8rem;color:rgba(240,244,255,.3);
+             background:#172033;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:10px 18px;">
+          Set STREAMLIT_URL in index.html line 16
+        </div>
+      </div>
+
+      <!-- Iframe -->
+      <iframe id="app-frame"
+              src=""
+              style="display:none;width:100%;height:900px;border:none;background:#070b14;"
+              allow="camera; microphone; clipboard-write"
+              title="FieldVision App">
+      </iframe>
+    </div>
+
+    <!-- Open-in-tab fallback -->
+    <div id="app-external-link" style="display:none;text-align:center;margin-top:20px;">
+      <a id="app-tab-link" href="#" target="_blank"
+         style="font-size:.82rem;color:rgba(240,244,255,.38);text-decoration:none;
+                transition:color .2s ease;"
+         onmouseover="this.style.color='rgba(240,244,255,.7)'"
+         onmouseout="this.style.color='rgba(240,244,255,.38)'">
+        Open in full tab &nbsp;↗
+      </a>
+    </div>
+
   </div>
 </section>
 
@@ -776,187 +832,6 @@
 
 
 <!-- ════════════════════════════════════════════════════════════════════════
-     COACH REQUESTS
-═════════════════════════════════════════════════════════════════════════ -->
-<section style="padding:100px 24px;position:relative;">
-  <div class="section-topline" data-topline></div>
-  <div style="max-width:1200px;margin:0 auto;display:grid;gap:48px;align-items:center;"
-       class="coach-grid">
-
-    <div class="reveal">
-      <div class="eyebrow">Coach Requests</div>
-      <h2 style="font-size:clamp(1.8rem,3.5vw,2.8rem);font-weight:800;letter-spacing:-.03em;margin-bottom:18px;">
-        April 2 Meeting<br/><span class="grad-red">Feature Wishlist</span>
-      </h2>
-      <p style="color:rgba(240,244,255,.5);line-height:1.8;font-size:.95rem;max-width:420px;">
-        Direct feedback from the coaching staff session. These five requests are driving
-        the current development roadmap for the platform.
-      </p>
-    </div>
-
-    <div class="reveal" style="transition-delay:.12s;display:flex;flex-direction:column;gap:12px;">
-
-      <div class="card" style="padding:18px 22px;display:flex;align-items:center;gap:16px;">
-        <div class="card-spot"></div>
-        <div style="width:36px;height:36px;border-radius:10px;background:rgba(200,16,46,.12);border:1px solid rgba(200,16,46,.22);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C8102E" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        </div>
-        <div>
-          <div style="font-weight:600;font-size:.92rem;margin-bottom:2px;">Mass Upload of Player Data</div>
-          <div style="color:rgba(240,244,255,.42);font-size:.8rem;">Batch upload multiple player scouting files at once</div>
-        </div>
-        <div class="badge badge-done" style="margin-left:auto;white-space:nowrap;"><span class="badge-dot"></span>Done</div>
-      </div>
-
-      <div class="card" style="padding:18px 22px;display:flex;align-items:center;gap:16px;">
-        <div class="card-spot"></div>
-        <div style="width:36px;height:36px;border-radius:10px;background:rgba(200,16,46,.12);border:1px solid rgba(200,16,46,.22);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C8102E" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        </div>
-        <div>
-          <div style="font-weight:600;font-size:.92rem;margin-bottom:2px;">Player Comparison Views</div>
-          <div style="color:rgba(240,244,255,.42);font-size:.8rem;">Side-by-side analysis of multiple prospects</div>
-        </div>
-        <div class="badge badge-done" style="margin-left:auto;white-space:nowrap;"><span class="badge-dot"></span>Done</div>
-      </div>
-
-      <div class="card" style="padding:18px 22px;display:flex;align-items:center;gap:16px;">
-        <div class="card-spot"></div>
-        <div style="width:36px;height:36px;border-radius:10px;background:rgba(200,16,46,.12);border:1px solid rgba(200,16,46,.22);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C8102E" stroke-width="2" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-        </div>
-        <div>
-          <div style="font-weight:600;font-size:.92rem;margin-bottom:2px;">Talent Pool Filtering</div>
-          <div style="color:rgba(240,244,255,.42);font-size:.8rem;">Filter recruits by position, metrics, and potential</div>
-        </div>
-        <div class="badge badge-done" style="margin-left:auto;white-space:nowrap;"><span class="badge-dot"></span>Done</div>
-      </div>
-
-      <div class="card" style="padding:18px 22px;display:flex;align-items:center;gap:16px;">
-        <div class="card-spot"></div>
-        <div style="width:36px;height:36px;border-radius:10px;background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a5b4fc" stroke-width="2" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-        </div>
-        <div>
-          <div style="font-weight:600;font-size:.92rem;margin-bottom:2px;">Trackman Data Integration</div>
-          <div style="color:rgba(240,244,255,.42);font-size:.8rem;">Full game-by-game pitch analytics dashboard</div>
-        </div>
-        <div class="badge badge-done" style="margin-left:auto;white-space:nowrap;"><span class="badge-dot"></span>Done</div>
-      </div>
-
-      <div class="card" style="padding:18px 22px;display:flex;align-items:center;gap:16px;">
-        <div class="card-spot"></div>
-        <div style="width:36px;height:36px;border-radius:10px;background:rgba(200,16,46,.12);border:1px solid rgba(200,16,46,.22);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C8102E" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-        </div>
-        <div>
-          <div style="font-weight:600;font-size:.92rem;margin-bottom:2px;">AI Pitch Interpretation</div>
-          <div style="color:rgba(240,244,255,.42);font-size:.8rem;">Plain-language AI explanation of pitch metrics</div>
-        </div>
-        <div class="badge badge-done" style="margin-left:auto;white-space:nowrap;"><span class="badge-dot"></span>Done</div>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-
-<!-- ════════════════════════════════════════════════════════════════════════
-     ROADMAP
-═════════════════════════════════════════════════════════════════════════ -->
-<section id="roadmap" style="padding:100px 24px;background:rgba(15,22,36,.45);position:relative;">
-  <div class="section-topline" data-topline></div>
-  <div style="max-width:800px;margin:0 auto;">
-
-    <div class="reveal" style="text-align:center;margin-bottom:64px;">
-      <div class="eyebrow">Live from Vault</div>
-      <h2 style="font-size:clamp(2rem,4vw,3rem);font-weight:800;letter-spacing:-.03em;margin-bottom:14px;">Development Roadmap</h2>
-      <p style="font-size:1rem;color:rgba(240,244,255,.5);max-width:480px;margin:0 auto;line-height:1.75;">
-        Current task status pulled directly from the project vault. Updated as work progresses.
-      </p>
-    </div>
-
-    <div style="position:relative;padding-left:52px;">
-      <div class="timeline-track"></div>
-
-      <div class="reveal" style="position:relative;margin-bottom:22px;">
-        <div style="position:absolute;left:-42px;top:14px;width:12px;height:12px;border-radius:50%;background:#a5b4fc;border:2px solid #070b14;box-shadow:0 0 10px rgba(165,180,252,.5);"></div>
-        <div class="card" style="padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
-          <div class="card-spot"></div>
-          <div>
-            <div style="font-weight:600;font-size:.95rem;margin-bottom:4px;">Fix Duplicate Chat Bug</div>
-            <div style="color:rgba(240,244,255,.42);font-size:.8rem;">Chat response appearing twice on first message</div>
-          </div>
-          <div class="badge badge-done" style="white-space:nowrap;"><span class="badge-dot"></span>Done</div>
-        </div>
-      </div>
-
-      <div class="reveal" style="position:relative;margin-bottom:22px;transition-delay:.06s;">
-        <div style="position:absolute;left:-42px;top:14px;width:12px;height:12px;border-radius:50%;background:#a5b4fc;border:2px solid #070b14;box-shadow:0 0 10px rgba(165,180,252,.5);"></div>
-        <div class="card" style="padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
-          <div class="card-spot"></div>
-          <div>
-            <div style="font-weight:600;font-size:.95rem;margin-bottom:4px;">Mass Upload Feature</div>
-            <div style="color:rgba(240,244,255,.42);font-size:.8rem;">Batch processing for multiple player scouting files</div>
-          </div>
-          <div class="badge badge-done" style="white-space:nowrap;"><span class="badge-dot"></span>Done</div>
-        </div>
-      </div>
-
-      <div class="reveal" style="position:relative;margin-bottom:22px;transition-delay:.12s;">
-        <div style="position:absolute;left:-42px;top:14px;width:12px;height:12px;border-radius:50%;background:#a5b4fc;border:2px solid #070b14;box-shadow:0 0 10px rgba(165,180,252,.5);"></div>
-        <div class="card" style="padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
-          <div class="card-spot"></div>
-          <div>
-            <div style="font-weight:600;font-size:.95rem;margin-bottom:4px;">Player Comparison View</div>
-            <div style="color:rgba(240,244,255,.42);font-size:.8rem;">Side-by-side prospect evaluation across sessions</div>
-          </div>
-          <div class="badge badge-done" style="white-space:nowrap;"><span class="badge-dot"></span>Done</div>
-        </div>
-      </div>
-
-      <div class="reveal" style="position:relative;margin-bottom:22px;transition-delay:.18s;">
-        <div style="position:absolute;left:-42px;top:14px;width:12px;height:12px;border-radius:50%;background:#a5b4fc;border:2px solid #070b14;box-shadow:0 0 10px rgba(165,180,252,.5);"></div>
-        <div class="card" style="padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
-          <div class="card-spot"></div>
-          <div>
-            <div style="font-weight:600;font-size:.95rem;margin-bottom:4px;">Talent Pool Filtering</div>
-            <div style="color:rgba(240,244,255,.42);font-size:.8rem;">Filter and rank prospects by position and metrics</div>
-          </div>
-          <div class="badge badge-done" style="white-space:nowrap;"><span class="badge-dot"></span>Done</div>
-        </div>
-      </div>
-
-      <div class="reveal" style="position:relative;margin-bottom:22px;transition-delay:.24s;">
-        <div style="position:absolute;left:-42px;top:14px;width:12px;height:12px;border-radius:50%;background:#a5b4fc;border:2px solid #070b14;box-shadow:0 0 10px rgba(165,180,252,.5);"></div>
-        <div class="card" style="padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
-          <div class="card-spot"></div>
-          <div>
-            <div style="font-weight:600;font-size:.95rem;margin-bottom:4px;">Trackman Integration</div>
-            <div style="color:rgba(240,244,255,.42);font-size:.8rem;">Approved and shipped — pitch analytics now live</div>
-          </div>
-          <div class="badge badge-done" style="white-space:nowrap;"><span class="badge-dot"></span>Done</div>
-        </div>
-      </div>
-
-      <div class="reveal" style="position:relative;transition-delay:.30s;">
-        <div style="position:absolute;left:-42px;top:14px;width:12px;height:12px;border-radius:50%;background:#a5b4fc;border:2px solid #070b14;box-shadow:0 0 10px rgba(165,180,252,.5);"></div>
-        <div class="card" style="padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
-          <div class="card-spot"></div>
-          <div>
-            <div style="font-weight:600;font-size:.95rem;margin-bottom:4px;">AI Pitch Interpretation</div>
-            <div style="color:rgba(240,244,255,.42);font-size:.8rem;">Natural-language explanation of pitch metrics</div>
-          </div>
-          <div class="badge badge-done" style="white-space:nowrap;"><span class="badge-dot"></span>Done</div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-
-<!-- ════════════════════════════════════════════════════════════════════════
      TECH STACK
 ═════════════════════════════════════════════════════════════════════════ -->
 <section id="stack" style="padding:100px 24px;position:relative;">
@@ -1067,62 +942,6 @@
 <!-- ════════════════════════════════════════════════════════════════════════
      EMBEDDED APP
 ═════════════════════════════════════════════════════════════════════════ -->
-<section id="app" style="padding:100px 24px 60px;position:relative;">
-  <div class="section-topline" data-topline></div>
-  <div style="max-width:1200px;margin:0 auto;">
-
-    <div class="reveal" style="text-align:center;margin-bottom:40px;">
-      <div class="eyebrow">Live App</div>
-      <h2 style="font-size:clamp(2rem,4vw,3rem);font-weight:800;letter-spacing:-.03em;margin-bottom:14px;">
-        FieldVision Intelligence
-      </h2>
-      <p style="font-size:1rem;color:rgba(240,244,255,.5);max-width:480px;margin:0 auto;line-height:1.75;">
-        Upload a scouting note and get an AI-generated report — right here, no new tab.
-      </p>
-    </div>
-
-    <!-- App frame container -->
-    <div class="reveal" style="transition-delay:.1s;position:relative;border-radius:16px;overflow:hidden;
-         border:1px solid rgba(200,16,46,.22);
-         box-shadow:0 0 60px rgba(200,16,46,.08), 0 0 0 1px rgba(255,255,255,.04);">
-
-      <!-- Placeholder -->
-      <div id="app-placeholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;
-           height:600px;background:#0f1624;gap:20px;text-align:center;padding:40px;">
-        <img src="static/logo.png" alt="FieldVision"
-             style="width:72px;height:72px;object-fit:contain;opacity:.5;"
-             onerror="this.style.display='none'" />
-        <div style="font-size:1.05rem;font-weight:600;color:rgba(240,244,255,.55);">App URL not configured yet</div>
-        <div style="font-family:'Fira Code',monospace;font-size:.8rem;color:rgba(240,244,255,.3);
-             background:#172033;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:10px 18px;">
-          Set STREAMLIT_URL in index.html line 16
-        </div>
-      </div>
-
-      <!-- Iframe -->
-      <iframe id="app-frame"
-              src=""
-              style="display:none;width:100%;height:900px;border:none;background:#070b14;"
-              allow="camera; microphone; clipboard-write"
-              title="FieldVision App">
-      </iframe>
-    </div>
-
-    <!-- Open-in-tab fallback -->
-    <div id="app-external-link" style="display:none;text-align:center;margin-top:20px;">
-      <a id="app-tab-link" href="#" target="_blank"
-         style="font-size:.82rem;color:rgba(240,244,255,.38);text-decoration:none;
-                transition:color .2s ease;"
-         onmouseover="this.style.color='rgba(240,244,255,.7)'"
-         onmouseout="this.style.color='rgba(240,244,255,.38)'">
-        Open in full tab &nbsp;↗
-      </a>
-    </div>
-
-  </div>
-</section>
-
-
 <!-- ════════════════════════════════════════════════════════════════════════
      FOOTER
 ═════════════════════════════════════════════════════════════════════════ -->
