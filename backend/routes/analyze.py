@@ -20,29 +20,35 @@ async def analyze(
     if not files_upload:
         raise HTTPException(400, "No files uploaded")
 
-    raw_files = []
-    for f in files_upload:
-        content = await f.read()
-        raw_files.append((f.filename, content))
+    try:
+        raw_files = []
+        for f in files_upload:
+            content = await f.read()
+            raw_files.append((f.filename, content))
 
-    # Group multi-page PDFs by player name
-    player_map = files.group_by_player(raw_files)
+        # Group multi-page PDFs by player name
+        player_map = files.group_by_player(raw_files)
 
-    results = []
-    for label, text in player_map.items():
-        if not text.strip():
-            continue
-        # RAG context
-        context = rag.context_block(text[:500])
-        # Analysis
-        report = claude.analyze_notes(text, context)
-        # Profile extraction
-        profile = claude.extract_player_profile(label, report)
-        results.append({
-            "label": label,
-            "report": report,
-            "profile": profile,
-            "context_used": bool(context),
-        })
+        results = []
+        for label, text in player_map.items():
+            if not text.strip():
+                continue
+            # RAG context
+            context = rag.context_block(text[:500])
+            # Analysis
+            report = claude.analyze_notes(text, context)
+            # Profile extraction
+            profile = claude.extract_player_profile(label, report)
+            results.append({
+                "label": label,
+                "report": report,
+                "profile": profile,
+                "context_used": bool(context),
+            })
 
-    return JSONResponse({"results": results, "count": len(results)})
+        return JSONResponse({"results": results, "count": len(results)})
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"Server error: {str(e)}")

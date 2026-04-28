@@ -1480,9 +1480,8 @@ document.querySelectorAll('[data-topline]').forEach(line => {
     document.getElementById('fv-analyze-btn').disabled = selectedFiles.length === 0;
   };
 
-  document.getElementById('fv-drop-zone').addEventListener('click', () => {
-    document.getElementById('fv-file-input').click();
-  });
+  // Note: <label> wrapping the file input already handles click-to-browse natively.
+  // No extra .click() listener needed — that caused the double file picker.
 
   function renderFileList () {
     const el = document.getElementById('fv-file-list');
@@ -1563,7 +1562,14 @@ document.querySelectorAll('[data-topline]').forEach(line => {
   function renderReports (results) {
     if (!results.length) {
       document.getElementById('fv-report-content').innerHTML =
-        '<div style="padding:20px;color:rgba(240,244,255,.4);font-size:.88rem;">No results returned.</div>';
+        `<div style="padding:24px;font-size:.88rem;">
+          <div style="color:#f07080;font-weight:600;margin-bottom:8px;">No text could be extracted.</div>
+          <div style="color:rgba(240,244,255,.5);line-height:1.6;">
+            This usually means the PDF is <strong style="color:rgba(240,244,255,.7);">image-based (scanned)</strong>
+            rather than text-based.<br><br>
+            Try: export as a text PDF, or paste the scouting notes as a <strong style="color:rgba(240,244,255,.7)">.txt file</strong> instead.
+          </div>
+        </div>`;
       return;
     }
 
@@ -1654,11 +1660,7 @@ document.querySelectorAll('[data-topline]').forEach(line => {
       `<div style="color:rgba(240,244,255,.55);font-size:.88rem;">${file.name} ready — click Analyze.</div>`;
   };
 
-  document.getElementById('fv-trackman-input') && (() => {
-    document.querySelector('label[ondragover*="trackman"]')?.addEventListener('click', () => {
-      document.getElementById('fv-trackman-input').click();
-    });
-  })();
+  // Note: <label> wrapping the trackman file input already handles click-to-browse natively.
 
   window.runTrackman = async function () {
     if (!trackmanFile) return;
