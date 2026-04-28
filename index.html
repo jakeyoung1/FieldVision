@@ -653,18 +653,22 @@
           <div style="font-weight:700;font-size:1rem;margin-bottom:6px;">Upload Scouting Files</div>
           <div style="color:rgba(240,244,255,.42);font-size:.82rem;margin-bottom:20px;">PDF or text files. Multiple files = batch mode.</div>
 
-          <label id="fv-drop-zone" style="display:flex;flex-direction:column;align-items:center;justify-content:center;
+          <div id="fv-drop-zone" style="display:flex;flex-direction:column;align-items:center;justify-content:center;
                  gap:12px;border:2px dashed rgba(200,16,46,.3);border-radius:12px;padding:36px 20px;
-                 cursor:pointer;transition:border-color .2s,background .2s;text-align:center;"
+                 transition:border-color .2s,background .2s;text-align:center;"
                  ondragover="event.preventDefault();this.style.borderColor='#C8102E';this.style.background='rgba(200,16,46,.06)'"
                  ondragleave="this.style.borderColor='rgba(200,16,46,.3)';this.style.background=''"
                  ondrop="handleDrop(event)">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(200,16,46,.6)" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            <div style="font-size:.9rem;color:rgba(240,244,255,.55);">Drop files here or <span style="color:#C8102E;font-weight:600;">browse</span></div>
+            <div style="font-size:.9rem;color:rgba(240,244,255,.55);">Drop files here or</div>
+            <button type="button" onclick="document.getElementById('fv-file-input').click()"
+                    style="padding:6px 18px;border-radius:6px;background:rgba(200,16,46,.15);
+                           border:1px solid rgba(200,16,46,.4);color:#C8102E;font-weight:600;
+                           font-size:.82rem;cursor:pointer;">Browse</button>
             <div style="font-size:.75rem;color:rgba(240,244,255,.28);">PDF · TXT · MD</div>
             <input id="fv-file-input" type="file" multiple accept=".pdf,.txt,.md" style="display:none"
                    onchange="handleFileSelect(this.files)">
-          </label>
+          </div>
 
           <div id="fv-file-list" style="margin-top:16px;display:flex;flex-direction:column;gap:6px;"></div>
 
@@ -725,17 +729,21 @@
           <div style="font-weight:700;font-size:1rem;margin-bottom:6px;">Upload Trackman CSV</div>
           <div style="color:rgba(240,244,255,.42);font-size:.82rem;margin-bottom:20px;">Export from Trackman and drop it here.</div>
 
-          <label style="display:flex;flex-direction:column;align-items:center;justify-content:center;
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
                  gap:12px;border:2px dashed rgba(165,180,252,.25);border-radius:12px;padding:36px 20px;
-                 cursor:pointer;transition:border-color .2s,background .2s;text-align:center;"
+                 transition:border-color .2s,background .2s;text-align:center;"
                  ondragover="event.preventDefault();this.style.borderColor='#a5b4fc'"
                  ondragleave="this.style.borderColor='rgba(165,180,252,.25)'"
                  ondrop="handleTrackmanDrop(event)">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(165,180,252,.5)" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-            <div style="font-size:.9rem;color:rgba(240,244,255,.55);">Drop CSV or <span style="color:#a5b4fc;font-weight:600;">browse</span></div>
+            <div style="font-size:.9rem;color:rgba(240,244,255,.55);">Drop CSV here or</div>
+            <button type="button" onclick="document.getElementById('fv-trackman-input').click()"
+                    style="padding:6px 18px;border-radius:6px;background:rgba(165,180,252,.1);
+                           border:1px solid rgba(165,180,252,.3);color:#a5b4fc;font-weight:600;
+                           font-size:.82rem;cursor:pointer;">Browse</button>
             <input id="fv-trackman-input" type="file" accept=".csv" style="display:none"
                    onchange="handleTrackmanSelect(this.files[0])">
-          </label>
+          </div>
 
           <input id="fv-trackman-focus" type="text" placeholder="Focus area (optional)…"
                  style="margin-top:14px;width:100%;padding:10px 14px;border-radius:8px;
