@@ -672,8 +672,24 @@
 
           <div id="fv-file-list" style="margin-top:16px;display:flex;flex-direction:column;gap:6px;"></div>
 
+          <!-- Paste fallback for scanned/image PDFs -->
+          <div style="margin-top:14px;">
+            <button type="button" onclick="togglePasteBox()"
+                    style="background:none;border:none;color:rgba(240,244,255,.38);font-size:.78rem;
+                           cursor:pointer;padding:0;text-decoration:underline;">
+              Or paste notes directly ↓
+            </button>
+            <textarea id="fv-paste-input"
+                      placeholder="Player name on first line, notes below. Multiple players: separate with '---'"
+                      style="display:none;margin-top:8px;width:100%;height:130px;padding:10px 12px;
+                             border-radius:8px;background:#172033;border:1px solid rgba(200,16,46,.25);
+                             color:#f0f4ff;font-size:.82rem;resize:vertical;outline:none;
+                             box-sizing:border-box;font-family:inherit;"
+                      oninput="onPasteInput(this.value)"></textarea>
+          </div>
+
           <button id="fv-analyze-btn" onclick="runAnalysis()"
-                  style="margin-top:20px;width:100%;padding:12px;border-radius:10px;
+                  style="margin-top:16px;width:100%;padding:12px;border-radius:10px;
                          background:#C8102E;color:#fff;font-weight:700;font-size:.9rem;
                          border:none;cursor:pointer;transition:opacity .2s;display:flex;
                          align-items:center;justify-content:center;gap:8px;"
@@ -1473,6 +1489,18 @@ document.querySelectorAll('[data-topline]').forEach(line => {
     if (name === 'players') renderPlayers();
   };
 
+  // ── Paste input ──────────────────────────────────────────────────────────
+  window.togglePasteBox = function () {
+    const ta = document.getElementById('fv-paste-input');
+    ta.style.display = ta.style.display === 'none' ? 'block' : 'none';
+    if (ta.style.display === 'block') ta.focus();
+  };
+
+  window.onPasteInput = function (val) {
+    const btn = document.getElementById('fv-analyze-btn');
+    btn.disabled = val.trim().length === 0 && selectedFiles.length === 0;
+  };
+
   // ── File drop / select ──────────────────────────────────────────────────
   window.handleDrop = function (e) {
     e.preventDefault();
@@ -1512,7 +1540,8 @@ document.querySelectorAll('[data-topline]').forEach(line => {
 
   // ── Run analysis ─────────────────────────────────────────────────────────
   window.runAnalysis = async function () {
-    if (!selectedFiles.length) return;
+    const pasteVal = document.getElementById('fv-paste-input').value.trim();
+    if (!selectedFiles.length && !pasteVal) return;
     const btn = document.getElementById('fv-analyze-btn');
     btn.disabled = true;
     btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin .8s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Analyzing…';
@@ -1524,7 +1553,18 @@ document.querySelectorAll('[data-topline]').forEach(line => {
     try {
       const fd = new FormData();
       selectedFiles.forEach(f => fd.append('files_upload', f));
-      fd.append('batch_mode', selectedFiles.length > 1 ? 'true' : 'false');
+
+      // If paste text provided, convert to a virtual .txt file
+      const pasteVal = document.getElementById('fv-paste-input').value.trim();
+      if (pasteVal) {
+        const blob = new Blob([pasteVal], { type: 'text/plain' });
+        const firstLine = pasteVal.split('\n')[0].trim().replace(/[^a-zA-Z0-9 _-]/g, '').trim();
+        const name = (firstLine || 'pasted-notes') + '.txt';
+        fd.append('files_upload', blob, name);
+      }
+
+      const totalFiles = selectedFiles.length + (pasteVal ? 1 : 0);
+      fd.append('batch_mode', totalFiles > 1 ? 'true' : 'false');
 
       const res  = await fetch(`${API_BASE}/api/analyze`, { method: 'POST', body: fd });
       const data = await res.json();
