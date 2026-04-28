@@ -761,6 +761,8 @@
                    onchange="handleTrackmanSelect(this.files[0])">
           </div>
 
+          <div id="fv-trackman-file-label" style="display:none;margin-top:12px;"></div>
+
           <input id="fv-trackman-focus" type="text" placeholder="Focus area (optional)…"
                  style="margin-top:14px;width:100%;padding:10px 14px;border-radius:8px;
                         background:#172033;border:1px solid rgba(255,255,255,.1);
@@ -1697,11 +1699,26 @@ document.querySelectorAll('[data-topline]').forEach(line => {
     if (!file) return;
     trackmanFile = file;
     document.getElementById('fv-trackman-btn').disabled = false;
-    document.getElementById('fv-trackman-result').innerHTML =
-      `<div style="color:rgba(240,244,255,.55);font-size:.88rem;">${file.name} ready — click Analyze.</div>`;
+    const label = document.getElementById('fv-trackman-file-label');
+    label.style.display = 'flex';
+    label.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;
+           background:#172033;border-radius:7px;font-size:.8rem;width:100%;box-sizing:border-box;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a5b4fc" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span style="flex:1;color:rgba(240,244,255,.7);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${file.name}</span>
+        <span style="color:rgba(240,244,255,.3);">${(file.size/1024).toFixed(0)}KB</span>
+        <span onclick="clearTrackmanFile()" style="cursor:pointer;color:rgba(240,244,255,.3);padding:0 2px;">✕</span>
+      </div>`;
   };
 
   // Note: <label> wrapping the trackman file input already handles click-to-browse natively.
+
+  window.clearTrackmanFile = function () {
+    trackmanFile = null;
+    document.getElementById('fv-trackman-file-label').style.display = 'none';
+    document.getElementById('fv-trackman-btn').disabled = true;
+    document.getElementById('fv-trackman-input').value = '';
+  };
 
   window.runTrackman = async function () {
     if (!trackmanFile) return;
