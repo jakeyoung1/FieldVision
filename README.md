@@ -1,18 +1,20 @@
 # ⚾ FieldVision — Baseball Scouting Intelligence
 
-> 🚧 **This project is currently in progress.**
+AI-powered baseball analytics platform for Saint Mary's College of California. Transform handwritten scouting notes into structured reports, interpret Trackman pitching data, and chat with an AI scout — all grounded in Branch Rickey's 1,919 historical scouting documents.
 
-FieldVision is an AI-powered baseball scouting platform built for Saint Mary's College of California. It transforms handwritten scouting notes into structured, actionable intelligence by combining Claude AI with a historical scouting knowledge base built from the Branch Rickey Papers.
+**Live:** [fieldvision.onrender.com](https://fieldvision.onrender.com)
 
 ---
 
 ## Features
 
-- **OCR Transcription** — Upload photos or PDFs of handwritten scouting notes; Claude Vision reads and digitizes them accurately, preserving abbreviations, shorthand, and player names
-- **AI-Powered Analysis** — Generates a structured scouting report with a summary, concrete recommendations, and a historical parallel drawn from Branch Rickey's scouting philosophy
-- **RAG Knowledge Base** — Semantic search against the Branch Rickey scouting archive using FAISS and local sentence embeddings for historically grounded context
-- **Ask the Scout** — Follow-up chat interface with full context from the notes and analysis
-- **PDF Export** — Download the digitized notes and full analysis report as clean, formatted PDFs
+- **Handwritten Note OCR** — Upload PDF, TXT, or MD scouting notes. Claude Vision OCR handles scanned and handwritten PDFs that text extractors can't read
+- **Branch Rickey RAG** — 1,919 historical scouting transcriptions indexed with TF-IDF (sklearn). Every report is benchmarked against decades of professional scouting wisdom
+- **Trackman Analysis** — Upload a Trackman CSV export for post-game pitch analytics. Per-pitcher velocity, spin rate, and pitch mix with neutral AI interpretation
+- **AI Chat Interface** — Follow-up questions grounded in your session. All uploads accumulate as context across the session
+- **PDF Report Export** — Export any scouting report to a clean, print-ready PDF
+- **Session Memory** — Upload multiple players in one session; the AI references all prior uploads when answering questions
+- **Players Tab** — Auto-populated talent pool with grade badges, search, and grade filtering
 
 ---
 
@@ -20,12 +22,13 @@ FieldVision is an AI-powered baseball scouting platform built for Saint Mary's C
 
 | Layer | Technology |
 |---|---|
-| Frontend | Streamlit |
-| AI / LLM | Anthropic Claude (claude-haiku-4-5) |
-| Embeddings | sentence-transformers (`all-MiniLM-L6-v2`) |
-| Vector Search | FAISS (CPU) |
-| PDF Generation | fpdf2 |
-| Image Processing | Pillow, pdf2image |
+| Frontend | Native HTML / Tailwind CSS / Vanilla JS |
+| Backend | FastAPI (Python 3.11) |
+| AI / LLM | Anthropic Claude (Sonnet 4.5 + Opus 4.5 for Vision OCR) |
+| RAG | scikit-learn TF-IDF (20K features, cosine similarity) |
+| PDF Extraction | pdfplumber → pypdf → Claude Vision OCR (fallback chain) |
+| Data | Pandas + NumPy |
+| Deployment | Render (Docker) — tracked on `feature/full-stack` branch |
 
 ---
 
@@ -33,25 +36,46 @@ FieldVision is an AI-powered baseball scouting platform built for Saint Mary's C
 
 ```
 FieldVision/
-├── app.py                      # Main Streamlit application
-├── precompute_embeddings.py    # One-time script to build the FAISS index
-├── requirements.txt
-├── packages.txt                # System-level dependencies (poppler)
+├── index.html                       # Full frontend (single-page app)
+├── backend/
+│   ├── main.py                      # FastAPI app entry point
+│   ├── routes/
+│   │   ├── analyze.py               # POST /api/analyze
+│   │   ├── chat.py                  # POST /api/chat
+│   │   └── trackman.py              # POST /api/trackman
+│   └── services/
+│       ├── claude.py                # All Claude API calls
+│       ├── rag.py                   # TF-IDF retrieval from Branch Rickey CSV
+│       └── files.py                 # PDF extraction + Claude Vision OCR fallback
+├── static/
+│   ├── logo.svg                     # Site logo (white + red FV mark)
+│   ├── logo-share-card.png          # Shareable dark card (1200×1200)
+│   └── logo-share-white.png         # Shareable white card (1200×1200)
 ├── data/
-│   ├── branch-rickey-scouting.csv   # Historical scouting knowledge base
-│   └── embeddings.npy               # Pre-computed embeddings (generated locally)
-└── .streamlit/
-    └── secrets.toml                 # API keys (not committed)
+│   └── branch-rickey-scouting.csv   # Historical scouting knowledge base (1,919 docs)
+├── requirements.txt
+└── Dockerfile
 ```
 
 ---
 
-## Setup
+## API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/analyze` | Upload scouting note files, returns structured reports |
+| `POST` | `/api/chat` | Continue a scouting conversation with session context |
+| `POST` | `/api/trackman` | Upload Trackman CSV, returns stats + AI interpretation |
+| `GET/HEAD` | `/api/health` | Health check (used by UptimeRobot keep-alive) |
+
+---
+
+## Local Setup
 
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/jakelyoung13-hash/FieldVision.git
+git clone https://github.com/jakeyoung1/FieldVision.git
 cd FieldVision
 ```
 
@@ -59,7 +83,7 @@ cd FieldVision
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 ```
 
 ### 3. Install dependencies
@@ -68,61 +92,43 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-> **Note:** PDF support requires `poppler`. Install via Homebrew on macOS:
-> ```bash
-> brew install poppler
-> ```
-
 ### 4. Add your Anthropic API key
 
-Create `.streamlit/secrets.toml`:
+Create a `.env` file in the project root:
 
-```toml
-ANTHROPIC_API_KEY = "sk-ant-..."
+```
+ANTHROPIC_API_KEY=sk-ant-...
 ```
 
-### 5. Precompute embeddings
-
-Run this once to build the FAISS index from the Branch Rickey knowledge base:
+### 5. Run the development server
 
 ```bash
-python precompute_embeddings.py
+uvicorn backend.main:app --reload
 ```
 
-This generates `data/embeddings.npy` (~80 MB model download on first run).
-
-### 6. Launch the app
-
-```bash
-streamlit run app.py
-```
+Open [http://localhost:8000](http://localhost:8000)
 
 ---
 
-## Usage
+## Deployment
 
-1. Upload one or more images or PDFs of handwritten scouting notes
-2. Optionally add context (e.g. *"High school pitching eval"*) and a focus area (e.g. *"Arm strength and projectability"*)
-3. Click **Transcribe & Analyze**
-4. Review the transcription, scouting report, and historical context
-5. Use the **Ask the Scout** chat to dig deeper
-6. Download the digitized notes or full analysis as a PDF
+The app is deployed on **Render** using Docker. Render tracks the `feature/full-stack` branch.
 
----
+**Branch sync pattern** — after every commit to `main`:
+```bash
+git checkout feature/full-stack && git merge main && git push origin feature/full-stack && git checkout main
+```
 
-## Deploying to Streamlit Cloud
+**Environment variables required on Render:**
+- `ANTHROPIC_API_KEY`
 
-1. Push the repo to GitHub (ensure `data/embeddings.npy` is committed)
-2. Connect the repo at [streamlit.io/cloud](https://streamlit.io/cloud)
-3. Add `ANTHROPIC_API_KEY` under **Settings → Secrets**
-4. Deploy
+**Keep-alive:** UptimeRobot pings `/api/health` every 5 minutes to prevent Render's free tier from sleeping.
 
 ---
 
 ## Roadmap
 
-- Trackman data integration — overlay objective pitch/batted ball metrics alongside qualitative scouting notes
-- Mass upload and batch processing
-- Player comparison and talent pool filtering
-- Expanded historical knowledge base
-
+- [ ] Mass upload — batch process multiple players at once
+- [ ] Player comparison — side-by-side grade and strengths view
+- [ ] Talent pool filtering — filter by grade, position, and metrics
+- [ ] Custom domain
