@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FieldVision — Baseball Scouting Intelligence</title>
-  <meta name="description" content="AI-powered baseball scouting intelligence. Transform handwritten notes into actionable reports with Claude, FAISS, and Branch Rickey's 1,919 historical documents." />
+  <meta name="description" content="AI-powered baseball scouting intelligence. Transform handwritten notes into actionable reports with Claude AI and Branch Rickey's 1,919 historical scouting documents." />
 
   <!-- Fonts: Fira Code (data/headings) + Inter (body) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -591,8 +591,8 @@
         <div style="font-size:.68rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:rgba(240,244,255,.38);">Rickey Docs</div>
       </div>
       <div class="card" style="padding:20px 12px;text-align:center;">
-        <div class="stat-num" data-target="384">0</div>
-        <div style="font-size:.68rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:rgba(240,244,255,.38);">Vector Dims</div>
+        <div class="stat-num">20K</div>
+        <div style="font-size:.68rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:rgba(240,244,255,.38);">TF-IDF Features</div>
       </div>
       <div class="card" style="padding:20px 12px;text-align:center;">
         <div class="stat-num">Top 5</div>
@@ -893,8 +893,8 @@
         <div style="font-family:'Fira Code',monospace;font-size:.72rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:rgba(200,16,46,.8);margin-bottom:10px;">Step 02</div>
         <h3 style="font-size:1.2rem;font-weight:700;margin-bottom:12px;">Semantic Retrieval</h3>
         <p style="color:rgba(240,244,255,.52);line-height:1.75;font-size:.9rem;">
-          Embedded with all-MiniLM-L6-v2 (384-dim) and matched against 1,919 Branch Rickey
-          scouting documents using FAISS cosine similarity. Top-5 most relevant reports retrieved.
+          Query is matched against 1,919 Branch Rickey scouting documents using
+          TF-IDF cosine similarity (20K-feature sklearn index). Top-5 most relevant reports retrieved.
         </p>
       </div>
 
@@ -945,7 +945,7 @@
         </div>
         <h3 style="font-size:1.05rem;font-weight:700;margin-bottom:8px;">Handwritten Note Upload</h3>
         <p style="color:rgba(240,244,255,.5);font-size:.88rem;line-height:1.72;">
-          Upload JPG, PNG, or PDF scouting notes. Multi-page PDF support included.
+          Upload PDF, TXT, or MD scouting notes. Multi-page PDF support included.
           Vision OCR handles messy handwriting, abbreviations, and field shorthand.
         </p>
       </div>
@@ -957,7 +957,7 @@
         </div>
         <h3 style="font-size:1.05rem;font-weight:700;margin-bottom:8px;">Branch Rickey RAG</h3>
         <p style="color:rgba(240,244,255,.5);font-size:.88rem;line-height:1.72;">
-          1,919 historical scouting transcriptions from the Branch Rickey Papers indexed with FAISS.
+          1,919 historical scouting transcriptions from the Branch Rickey Papers indexed with TF-IDF.
           Every report is benchmarked against decades of professional scouting wisdom.
         </p>
       </div>
@@ -970,7 +970,7 @@
         <h3 style="font-size:1.05rem;font-weight:700;margin-bottom:8px;">Trackman Game Analysis</h3>
         <p style="color:rgba(240,244,255,.5);font-size:.88rem;line-height:1.72;">
           Upload Trackman CSV exports for post-game pitch analytics. Velocity, spin rate,
-          break, and launch angle summaries for both teams' pitchers — now live and approved.
+          break, and pitch mix summaries for both teams' pitchers — now live and approved.
         </p>
       </div>
 
@@ -1026,7 +1026,7 @@
       <div class="eyebrow">Under the Hood</div>
       <h2 style="font-size:clamp(2rem,4vw,3rem);font-weight:800;letter-spacing:-.03em;margin-bottom:14px;">Tech Stack</h2>
       <p style="font-size:1rem;color:rgba(240,244,255,.5);max-width:480px;margin:0 auto;line-height:1.75;">
-        Production-grade components chosen for accuracy, speed, and zero-API-quota local embeddings
+        Production-grade components chosen for accuracy, speed, and a lean deployment footprint
       </p>
     </div>
 
@@ -1036,28 +1036,28 @@
         Claude Sonnet 4.5
       </div>
       <div class="tech-badge">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(240,244,255,.6)" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-        FAISS IndexFlatIP
-      </div>
-      <div class="tech-badge">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(240,244,255,.6)" stroke-width="2" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        all-MiniLM-L6-v2
+        sklearn TF-IDF
       </div>
       <div class="tech-badge">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(240,244,255,.6)" stroke-width="2" aria-hidden="true"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M8 7h8M8 11h5"/></svg>
-        Streamlit
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(240,244,255,.6)" stroke-width="2" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        Claude Vision OCR
+      </div>
+      <div class="tech-badge">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(240,244,255,.6)" stroke-width="2" aria-hidden="true"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+        FastAPI
       </div>
       <div class="tech-badge">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(240,244,255,.6)" stroke-width="2" aria-hidden="true"><path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-        Python 3.14
+        Python 3.11
       </div>
       <div class="tech-badge">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(240,244,255,.6)" stroke-width="2" aria-hidden="true"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
-        GitHub → Streamlit Cloud
+        GitHub → Render
       </div>
       <div class="tech-badge">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(240,244,255,.6)" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        fpdf2 Reports
+        PDF Export
       </div>
       <div class="tech-badge">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(240,244,255,.6)" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
@@ -1067,13 +1067,13 @@
 
     <!-- Architecture strip -->
     <div class="reveal" style="transition-delay:.16s;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px;font-family:'Fira Code',monospace;font-size:.75rem;color:rgba(240,244,255,.38);">
-      <span style="padding:6px 14px;background:#0f1624;border:1px solid rgba(255,255,255,.08);border-radius:8px;color:rgba(240,244,255,.65);">Image / PDF</span>
+      <span style="padding:6px 14px;background:#0f1624;border:1px solid rgba(255,255,255,.08);border-radius:8px;color:rgba(240,244,255,.65);">PDF / Text</span>
       <span style="color:rgba(200,16,46,.5);">→</span>
       <span style="padding:6px 14px;background:#0f1624;border:1px solid rgba(255,255,255,.08);border-radius:8px;color:rgba(240,244,255,.65);">Claude Vision OCR</span>
       <span style="color:rgba(200,16,46,.5);">→</span>
-      <span style="padding:6px 14px;background:#0f1624;border:1px solid rgba(255,255,255,.08);border-radius:8px;color:rgba(240,244,255,.65);">MiniLM Embed</span>
+      <span style="padding:6px 14px;background:#0f1624;border:1px solid rgba(255,255,255,.08);border-radius:8px;color:rgba(240,244,255,.65);">TF-IDF Retrieval</span>
       <span style="color:rgba(200,16,46,.5);">→</span>
-      <span style="padding:6px 14px;background:#0f1624;border:1px solid rgba(255,255,255,.08);border-radius:8px;color:rgba(240,244,255,.65);">FAISS Top-5</span>
+      <span style="padding:6px 14px;background:#0f1624;border:1px solid rgba(255,255,255,.08);border-radius:8px;color:rgba(240,244,255,.65);">Rickey Top-5</span>
       <span style="color:rgba(200,16,46,.5);">→</span>
       <span style="padding:6px 14px;background:rgba(200,16,46,.15);border:1px solid rgba(200,16,46,.3);border-radius:8px;color:#f07080;">Claude Sonnet</span>
       <span style="color:rgba(200,16,46,.5);">→</span>
@@ -1180,23 +1180,6 @@ window.addEventListener('scroll', () => {
   navbar.style.boxShadow = window.scrollY > 20 ? '0 4px 32px rgba(0,0,0,0.35)' : 'none';
 }, { passive: true });
 
-// ── Wire Streamlit embed ──────────────────────────────────────────────────
-(function () {
-  const url = (typeof STREAMLIT_URL !== 'undefined') ? STREAMLIT_URL.trim() : '';
-  const placeholder = document.getElementById('app-placeholder');
-  const frame       = document.getElementById('app-frame');
-  const extBlock    = document.getElementById('app-external-link');
-  const extLink     = document.getElementById('app-tab-link');
-  if (url) {
-    if (placeholder) placeholder.style.display = 'none';
-    if (frame) {
-      frame.src = url + '?embed=true&embed_options=hide_toolbar,hide_footer,hide_loading_screen';
-      frame.style.display = 'block';
-    }
-    if (extBlock) extBlock.style.display = 'block';
-    if (extLink)  extLink.href = url;
-  }
-})();
 
 // ── Scroll progress bar ───────────────────────────────────────────────────
 (function () {
