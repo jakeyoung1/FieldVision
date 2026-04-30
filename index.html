@@ -641,6 +641,10 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         Players
       </button>
+      <button class="fv-tab" data-tab="combined" onclick="switchTab('combined')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="9" y1="14" x2="13" y2="14"/></svg>
+        Combined Chat
+      </button>
     </div>
 
     <!-- ── Scouting Tab ───────────────────────────────────────────── -->
@@ -812,6 +816,50 @@
           </select>
         </div>
         <div id="fv-player-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;"></div>
+      </div>
+    </div>
+
+    <!-- ── Combined Chat Tab ─────────────────────────────────────── -->
+    <div id="tab-combined" class="fv-tab-panel" style="display:none;">
+
+      <!-- Context status pills -->
+      <div id="fv-combined-context" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;"></div>
+
+      <div class="card" style="overflow:hidden;">
+        <div class="card-spot"></div>
+        <div style="padding:18px 24px;border-bottom:1px solid rgba(255,255,255,.06);
+             display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-weight:700;font-size:.95rem;">Combined Intelligence Chat</div>
+            <div style="font-size:.75rem;color:rgba(240,244,255,.38);margin-top:2px;">
+              Ask about anything loaded this session — scouting notes, Trackman data, or both
+            </div>
+          </div>
+          <button onclick="clearCombinedChat()"
+                  style="padding:5px 12px;border-radius:6px;background:rgba(255,255,255,.05);
+                         border:1px solid rgba(255,255,255,.1);color:rgba(240,244,255,.5);
+                         font-size:.75rem;cursor:pointer;">Clear</button>
+        </div>
+        <div id="fv-combined-messages" style="padding:20px 24px;min-height:280px;max-height:420px;
+             overflow-y:auto;display:flex;flex-direction:column;gap:12px;">
+          <div id="fv-combined-empty" style="margin:auto;text-align:center;color:rgba(240,244,255,.25);font-size:.85rem;padding:40px 0;">
+            Load scouting notes or Trackman data, then ask anything about your session.
+          </div>
+        </div>
+        <div style="padding:14px 18px;border-top:1px solid rgba(255,255,255,.06);display:flex;gap:10px;">
+          <input id="fv-combined-input" type="text"
+                 placeholder="Ask about your players, pitching data, comparisons…"
+                 style="flex:1;padding:10px 16px;border-radius:8px;background:#172033;
+                        border:1px solid rgba(255,255,255,.1);color:#f0f4ff;font-size:.88rem;outline:none;"
+                 onkeydown="if(event.key==='Enter')sendCombinedChat()"
+                 onfocus="this.style.borderColor='rgba(200,16,46,.5)'"
+                 onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+          <button onclick="sendCombinedChat()"
+                  style="padding:10px 20px;border-radius:8px;background:#C8102E;color:#fff;
+                         font-weight:600;font-size:.85rem;border:none;cursor:pointer;white-space:nowrap;">
+            Send
+          </button>
+        </div>
       </div>
     </div>
 
@@ -1452,12 +1500,15 @@ document.querySelectorAll('[data-topline]').forEach(line => {
   const API_BASE = window.FV_API_BASE || '';  // set by server; empty = same origin
 
   // ── State ───────────────────────────────────────────────────────────────
-  let selectedFiles  = [];
-  let trackmanFile   = null;
-  let currentReport  = '';
-  let sessionReports = [];   // accumulates all reports this session for chat context
-  let chatHistory    = [];
-  let talentPool     = [];   // [{label, profile, report}]
+  let selectedFiles       = [];
+  let trackmanFile        = null;
+  let currentReport       = '';
+  let sessionReports      = [];   // accumulates all scouting reports this session
+  let chatHistory         = [];
+  let talentPool          = [];   // [{label, profile, report}]
+  let trackmanContext     = '';   // plain-text summary from last Trackman run
+  let trackmanExportData  = null; // full API response from last Trackman run
+  let combinedChatHistory = [];   // separate history for the Combined Chat tab
 
   // ── Tab switching ────────────────────────────────────────────────────────
   window.switchTab = function (name) {
@@ -1465,7 +1516,8 @@ document.querySelectorAll('[data-topline]').forEach(line => {
     document.querySelectorAll('.fv-tab-panel').forEach(p => p.style.display = 'none');
     const panel = document.getElementById('tab-' + name);
     if (panel) panel.style.display = '';
-    if (name === 'players') renderPlayers();
+    if (name === 'players')  renderPlayers();
+    if (name === 'combined') renderCombinedContext();
   };
 
   // ── Paste input ──────────────────────────────────────────────────────────
@@ -1691,6 +1743,7 @@ document.querySelectorAll('[data-topline]').forEach(line => {
       thinkingEl.remove();
       chatHistory.push({ role: 'assistant', content: data.reply });
       renderChatMessage('assistant', data.reply);
+      syncProfileFromChat(data.reply);
     } catch (err) {
       thinkingEl.remove();
       renderChatMessage('assistant', `Error: ${err.message}`);
@@ -1766,6 +1819,10 @@ document.querySelectorAll('[data-topline]').forEach(line => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Trackman analysis failed');
 
+      // Store for combined chat and PDF export
+      trackmanExportData = data;
+      trackmanContext = `Trackman Data (${data.pitchers} pitchers, ${data.rows} pitches):\n${data.summary}\n\nAI Interpretation:\n${data.interpretation}`;
+
       const resultEl = document.getElementById('fv-trackman-result');
       resultEl.style.display = 'block';
       resultEl.style.alignItems = '';
@@ -1773,7 +1830,7 @@ document.querySelectorAll('[data-topline]').forEach(line => {
       resultEl.style.textAlign = '';
       resultEl.innerHTML = `
         <div style="max-height:460px;overflow-y:auto;padding-right:4px;">
-          <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
+          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
             <div style="background:#172033;border-radius:8px;padding:10px 16px;text-align:center;min-width:80px;">
               <div style="font-size:1.4rem;font-weight:800;color:#a5b4fc;">${data.pitchers}</div>
               <div style="font-size:.7rem;color:rgba(240,244,255,.4);text-transform:uppercase;letter-spacing:.08em;">Pitchers</div>
@@ -1782,6 +1839,9 @@ document.querySelectorAll('[data-topline]').forEach(line => {
               <div style="font-size:1.4rem;font-weight:800;color:#a5b4fc;">${data.rows}</div>
               <div style="font-size:.7rem;color:rgba(240,244,255,.4);text-transform:uppercase;letter-spacing:.08em;">Pitches</div>
             </div>
+            <button onclick="exportTrackmanPDF()" style="margin-left:auto;padding:6px 14px;border-radius:6px;
+              background:rgba(165,180,252,.1);border:1px solid rgba(165,180,252,.3);color:#a5b4fc;
+              font-size:.75rem;font-weight:600;cursor:pointer;">↓ Export PDF</button>
           </div>
           <div style="font-weight:700;font-size:.88rem;margin-bottom:8px;color:rgba(240,244,255,.7);">AI Interpretation</div>
           <div class="fv-report-md" style="background:#0a1120;border-radius:10px;padding:16px 18px;">
@@ -1847,6 +1907,231 @@ document.querySelectorAll('[data-topline]').forEach(line => {
     if (!filtered.length) {
       container.innerHTML = '<div style="color:rgba(240,244,255,.35);font-size:.88rem;padding:20px;">No players match your filters.</div>';
     }
+  }
+
+  // ── Trackman PDF Export ───────────────────────────────────────────────────
+  window.exportTrackmanPDF = function () {
+    if (!trackmanExportData) return;
+    const d = trackmanExportData;
+    const filename = trackmanFile ? trackmanFile.name.replace('.csv','') : 'Trackman';
+
+    // Build pitcher stats table rows
+    const statsRows = Object.entries(d.stats || {}).map(([name, s]) => {
+      const mix = Object.entries(s.pitch_mix || {}).slice(0,4)
+        .map(([k,v]) => `${k}: ${v}`).join(', ');
+      return `<tr>
+        <td>${name}</td>
+        <td>${s.pitches}</td>
+        <td>${s.avg_velo != null ? s.avg_velo + ' mph' : '—'}</td>
+        <td>${s.max_velo != null ? s.max_velo + ' mph' : '—'}</td>
+        <td>${s.avg_spin != null ? Math.round(s.avg_spin) + ' rpm' : '—'}</td>
+        <td style="font-size:.8em;">${mix || '—'}</td>
+      </tr>`;
+    }).join('');
+
+    const win = window.open('', '_blank');
+    win.document.write(`<!DOCTYPE html><html><head>
+      <meta charset="UTF-8">
+      <title>FieldVision Trackman — ${filename}</title>
+      <style>
+        body { font-family: Georgia, serif; max-width: 860px; margin: 40px auto; padding: 0 24px; color: #111; line-height: 1.6; }
+        h1 { font-size: 1.5rem; border-bottom: 2px solid #6366f1; padding-bottom: 8px; margin-bottom: 4px; }
+        .meta { font-size: .85rem; color: #555; margin-bottom: 28px; }
+        h2 { font-size: 1.05rem; color: #002147; margin-top: 24px; margin-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; font-size: .88rem; margin-bottom: 24px; }
+        th { background: #002147; color: #fff; padding: 8px 10px; text-align: left; font-size: .8rem; }
+        td { padding: 7px 10px; border-bottom: 1px solid #eee; }
+        tr:nth-child(even) td { background: #f8f8ff; }
+        .interpretation { background: #f4f6ff; border-left: 3px solid #6366f1; padding: 14px 18px; border-radius: 4px; }
+        p, li { font-size: .93rem; }
+        @media print { body { margin: 20px; } }
+      </style>
+    </head><body>
+      <h1>FieldVision — Trackman Analysis</h1>
+      <div class="meta">File: <strong>${filename}</strong> &nbsp;|&nbsp; ${d.pitchers} pitchers · ${d.rows} pitches &nbsp;|&nbsp; ${new Date().toLocaleDateString()}</div>
+      <h2>Pitcher Statistics</h2>
+      <table>
+        <thead><tr><th>Pitcher</th><th>Pitches</th><th>Avg Velo</th><th>Max Velo</th><th>Avg Spin</th><th>Pitch Mix</th></tr></thead>
+        <tbody>${statsRows}</tbody>
+      </table>
+      <h2>AI Interpretation</h2>
+      <div class="interpretation">${markdownToHtml(d.interpretation)}</div>
+    </body></html>`);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); }, 400);
+  };
+
+  // ── Grade sync: update talent pool when chat mentions a new grade ──────────
+  function syncProfileFromChat (reply) {
+    const reportCards = document.querySelectorAll('[data-report-label]');
+    if (!reportCards.length) return;
+
+    let updated = false;
+    reportCards.forEach(card => {
+      const label  = card.dataset.reportLabel;
+      const player = talentPool.find(p => (p.profile?.name || p.label) === label || p.label === label);
+      if (!player?.profile) return;
+
+      // Grade patterns to detect in the AI reply
+      const patterns = [
+        /\bgrade[d]?\s*(?:is\s*|:?\s*)([A-F])\b/i,
+        /\b([A-F])\s*[-–—]\s*(?:grade|rated|prospect|candidate)/i,
+        /\boverall[:\s]+([A-F])\b/i,
+        /\bupgrad(?:e|ed|ing)(?:\s+to)?\s+(?:an?\s+)?([A-F])\b/i,
+        /\bI(?:'d| would)\s+(?:give|rate|grade|assign)\s+(?:this\s+)?(?:player\s+)?(?:an?\s+)?([A-F])\b/i,
+        /\b(?:an?\s+)?([A-F])\s+prospect\b/i,
+        /\bGrade:\s*([A-F])\b/i,
+        /\b([A-F])\s+grade\b/i,
+      ];
+
+      for (const pat of patterns) {
+        const m = reply.match(pat);
+        if (m) {
+          const newGrade = m[1].toUpperCase();
+          if (player.profile.grade !== newGrade) {
+            player.profile.grade = newGrade;
+            // Update badge in report panel live
+            const badge = card.querySelector('.fv-grade-badge');
+            if (badge) {
+              badge.className = `fv-grade-badge fv-grade-${newGrade}`;
+              badge.textContent = newGrade;
+            }
+            updated = true;
+          }
+          break;
+        }
+      }
+    });
+
+    // Refresh Players tab if it's currently open
+    if (updated && document.querySelector('.fv-tab.active')?.dataset.tab === 'players') {
+      renderPlayers();
+    }
+  }
+
+  // ── Combined Chat ─────────────────────────────────────────────────────────
+  function renderCombinedContext () {
+    const el = document.getElementById('fv-combined-context');
+    if (!el) return;
+    const pills = [];
+
+    if (sessionReports.length) {
+      pills.push(`<span style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;
+        border-radius:99px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);
+        font-size:.75rem;font-weight:600;color:#4ade80;">
+        <span style="width:6px;height:6px;border-radius:50%;background:#4ade80;"></span>
+        ${sessionReports.length} Scouting Report${sessionReports.length > 1 ? 's' : ''}
+      </span>`);
+    } else {
+      pills.push(`<span style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;
+        border-radius:99px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+        font-size:.75rem;color:rgba(240,244,255,.35);">No scouting notes loaded</span>`);
+    }
+
+    if (trackmanContext) {
+      pills.push(`<span style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;
+        border-radius:99px;background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.25);
+        font-size:.75rem;font-weight:600;color:#a5b4fc;">
+        <span style="width:6px;height:6px;border-radius:50%;background:#a5b4fc;"></span>
+        Trackman Data
+      </span>`);
+    } else {
+      pills.push(`<span style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;
+        border-radius:99px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+        font-size:.75rem;color:rgba(240,244,255,.35);">No Trackman data loaded</span>`);
+    }
+
+    if (chatHistory.length > 0) {
+      const turns = Math.floor(chatHistory.length / 2);
+      pills.push(`<span style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;
+        border-radius:99px;background:rgba(200,16,46,.1);border:1px solid rgba(200,16,46,.2);
+        font-size:.75rem;font-weight:600;color:#f07080;">
+        <span style="width:6px;height:6px;border-radius:50%;background:#f07080;"></span>
+        ${turns} Scouting Chat Turn${turns !== 1 ? 's' : ''}
+      </span>`);
+    }
+
+    el.innerHTML = pills.join('');
+  }
+
+  window.clearCombinedChat = function () {
+    combinedChatHistory = [];
+    const msgs = document.getElementById('fv-combined-messages');
+    msgs.innerHTML = `<div id="fv-combined-empty" style="margin:auto;text-align:center;
+      color:rgba(240,244,255,.25);font-size:.85rem;padding:40px 0;">
+      Load scouting notes or Trackman data, then ask anything about your session.
+    </div>`;
+  };
+
+  window.sendCombinedChat = async function () {
+    const input = document.getElementById('fv-combined-input');
+    const text  = input.value.trim();
+    if (!text) return;
+    input.value = '';
+
+    // Remove empty placeholder
+    const empty = document.getElementById('fv-combined-empty');
+    if (empty) empty.remove();
+
+    combinedChatHistory.push({ role: 'user', content: text });
+    renderCombinedMessage('user', text);
+
+    const thinking = appendCombinedThinking();
+
+    // Build full session context
+    const contextParts = [];
+    if (sessionReports.length) {
+      contextParts.push(`SCOUTING REPORTS:\n${sessionReports.join('\n\n---\n\n')}`);
+    }
+    if (trackmanContext) {
+      contextParts.push(`TRACKMAN DATA:\n${trackmanContext}`);
+    }
+    if (chatHistory.length) {
+      const priorChat = chatHistory.map(m => `${m.role === 'user' ? 'Coach' : 'Scout'}: ${m.content}`).join('\n');
+      contextParts.push(`PRIOR SCOUTING CHAT:\n${priorChat}`);
+    }
+    const fullContext = contextParts.join('\n\n===\n\n');
+
+    try {
+      const res  = await fetch(`${API_BASE}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          history: combinedChatHistory,
+          context: fullContext,
+          session_context: '',
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Chat failed');
+
+      thinking.remove();
+      combinedChatHistory.push({ role: 'assistant', content: data.reply });
+      renderCombinedMessage('assistant', data.reply);
+    } catch (err) {
+      thinking.remove();
+      renderCombinedMessage('assistant', `Error: ${err.message}`);
+    }
+  };
+
+  function renderCombinedMessage (role, text) {
+    const msgs = document.getElementById('fv-combined-messages');
+    const div  = document.createElement('div');
+    div.className = `fv-chat-bubble fv-chat-${role}`;
+    div.innerHTML = markdownToHtml(text);
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function appendCombinedThinking () {
+    const msgs = document.getElementById('fv-combined-messages');
+    const div  = document.createElement('div');
+    div.className = 'fv-chat-bubble fv-chat-assistant';
+    div.innerHTML = '<span style="opacity:.5">Thinking…</span>';
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+    return div;
   }
 
   // ── Markdown → HTML (minimal) ─────────────────────────────────────────────
