@@ -117,22 +117,37 @@ def extract_players_from_chat(reply: str, context: str = "") -> list[dict]:
     profiles for any players that are meaningfully evaluated — not just named.
     Returns a list of profile dicts identical in shape to extract_player_profile().
     """
-    context_block = f"SCOUTING CONTEXT (use for grade calibration):\n{context[:2500]}\n\n" if context else ""
-    prompt = f"""{context_block}Read the following text and extract profiles for any baseball players
-that are meaningfully evaluated (ranked, graded, described with strengths/weaknesses, or compared).
-Do NOT include players who are only mentioned by name in passing with no evaluation.
+    context_block = (
+        f"SCOUTING REPORTS (authoritative source for established grades):\n{context[:2500]}\n\n"
+        if context else ""
+    )
+    prompt = f"""{context_block}Read the CHAT REPLY below and extract profiles for baseball players \
+that are meaningfully evaluated — ranked, described, compared, or assessed. \
+Skip players only mentioned by name with no evaluation.
 
-TEXT:
+CHAT REPLY:
 {reply[:2500]}
+
+GRADING INSTRUCTIONS — follow in this exact order:
+1. If the SCOUTING REPORTS above contain an explicit grade (A/B/C/D/F) for this player, \
+use THAT grade. Do not change it.
+2. If no prior grade exists, assign based on the evaluation language in the chat reply:
+   A — elite, exceptional, best on the field, standout, top prospect, dominant
+   B — above average, solid, strong, reliable, performed well
+   C — average, inconsistent, developing, mixed results, needs refinement
+   D — below average, struggled, weak, poor performance, concerning
+   F — not recommended, significant issues across the board
+3. B is NOT a default. Most players are C. Only use B if the language clearly indicates \
+above-average performance. Only use A if the language is genuinely exceptional.
+4. Differentiate grades across players in the same reply — if one player is described as \
+better than another, their grades must reflect that difference.
 
 Return ONLY a valid JSON array — no explanation, no markdown fences.
 Each element must have exactly these keys:
 {{"name": "Full Name", "position": "string or null", "grade": "A/B/C/D/F",
   "strengths": ["list","of","strings"], "concerns": ["list","of","strings"],
-  "summary": "1-2 sentence summary"}}
+  "summary": "1-2 sentence summary based on the evaluation"}}
 
-Base the grade on any explicit grade mentioned, or infer from the evaluation language
-(elite/standout → A, solid/strong → B, average/developing → C, below average → D).
 Return [] if no players are meaningfully evaluated."""
 
     client = _client()
