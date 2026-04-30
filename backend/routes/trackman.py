@@ -10,9 +10,9 @@ from backend.services import claude
 router = APIRouter()
 
 PITCH_COLS = [
-    "Pitcher", "PitchType", "RelSpeed", "SpinRate", "InducedVertBreak",
-    "HorzBreak", "PlateLocHeight", "PlateLocSide", "PitchCall",
-    "TaggedPitchType", "AutoPitchType",
+    "Pitcher", "PitcherTeam", "PitchType", "RelSpeed", "SpinRate",
+    "InducedVertBreak", "HorzBreak", "PlateLocHeight", "PlateLocSide",
+    "PitchCall", "TaggedPitchType", "AutoPitchType",
 ]
 
 
@@ -41,11 +41,19 @@ async def trackman(
 
         df_clean = df[available].dropna(how="all")
 
-        # Build summary stats per pitcher
+        # Build summary stats per pitcher (also capture team if available)
         stats = {}
         if "Pitcher" in df_clean.columns:
+            # Use original df to get PitcherTeam (it may not be in df_clean if not in PITCH_COLS hit)
+            team_col_available = "PitcherTeam" in df.columns
             for pitcher, grp in df_clean.groupby("Pitcher"):
                 pitcher_stats: dict = {"pitches": len(grp)}
+                # Team affiliation
+                if team_col_available:
+                    team_vals = df.loc[df["Pitcher"] == pitcher, "PitcherTeam"].dropna()
+                    pitcher_stats["team"] = str(team_vals.iloc[0]) if not team_vals.empty else ""
+                else:
+                    pitcher_stats["team"] = ""
                 if "RelSpeed" in grp.columns:
                     pitcher_stats["avg_velo"] = round(float(grp["RelSpeed"].mean()), 1)
                     pitcher_stats["max_velo"] = round(float(grp["RelSpeed"].max()), 1)
@@ -55,6 +63,12 @@ async def trackman(
                     col = "TaggedPitchType" if "TaggedPitchType" in grp.columns else "PitchType"
                     pitcher_stats["pitch_mix"] = grp[col].value_counts().to_dict()
                 stats[str(pitcher)] = pitcher_stats
+
+        # Build teams grouping: { teamName: [pitcherName, ...] }
+        teams: dict[str, list[str]] = {}
+        for pitcher, s in stats.items():
+            team = s.get("team") or "Unknown Team"
+            teams.setdefault(team, []).append(pitcher)
 
         # Build plain-text summary for AI interpretation
         summary_lines = []
@@ -80,6 +94,7 @@ async def trackman(
             "rows": len(df_clean),
             "pitchers": len(stats),
             "stats": stats,
+            "teams": teams,
             "summary": summary_text,
             "interpretation": interpretation,
             "columns": available,

@@ -795,15 +795,15 @@
     <!-- ── Players Tab ───────────────────────────────────────────── -->
     <div id="tab-players" class="fv-tab-panel" style="display:none;">
       <div id="fv-players-empty" style="text-align:center;padding:80px 20px;color:rgba(240,244,255,.3);font-size:.9rem;">
-        Analyze scouting notes first to build your talent pool.
+        Upload scouting notes or Trackman data to build your player roster.
       </div>
       <div id="fv-players-content" style="display:none;">
         <!-- Filters -->
-        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:28px;align-items:center;">
           <input id="fv-filter-text" type="text" placeholder="Search players…"
                  style="padding:9px 14px;border-radius:8px;background:#0f1624;
                         border:1px solid rgba(255,255,255,.1);color:#f0f4ff;font-size:.85rem;
-                        outline:none;flex:1;min-width:180px;"
+                        outline:none;flex:1;min-width:160px;"
                  oninput="filterPlayers()" />
           <select id="fv-filter-grade" onchange="filterPlayers()"
                   style="padding:9px 14px;border-radius:8px;background:#0f1624;
@@ -814,8 +814,16 @@
             <option value="C">C — Developmental</option>
             <option value="D">D — Needs Work</option>
           </select>
+          <select id="fv-filter-source" onchange="filterPlayers()"
+                  style="padding:9px 14px;border-radius:8px;background:#0f1624;
+                         border:1px solid rgba(255,255,255,.1);color:#f0f4ff;font-size:.85rem;outline:none;">
+            <option value="">All Sources</option>
+            <option value="scouting">Scouting Notes</option>
+            <option value="trackman">Trackman</option>
+          </select>
         </div>
-        <div id="fv-player-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;"></div>
+        <!-- Rendered content injected here by renderPlayers() -->
+        <div id="fv-player-cards"></div>
       </div>
     </div>
 
@@ -1509,6 +1517,7 @@ document.querySelectorAll('[data-topline]').forEach(line => {
   let trackmanContext     = '';   // plain-text summary from last Trackman run
   let trackmanExportData  = null; // full API response from last Trackman run
   let combinedChatHistory = [];   // separate history for the Combined Chat tab
+  let trackmanRoster      = {};   // { teamName: [{name, stats}] } from last Trackman run
 
   // ── Tab switching ────────────────────────────────────────────────────────
   window.switchTab = function (name) {
@@ -1819,9 +1828,20 @@ document.querySelectorAll('[data-topline]').forEach(line => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Trackman analysis failed');
 
-      // Store for combined chat and PDF export
+      // Store for combined chat, PDF export, and Players tab
       trackmanExportData = data;
       trackmanContext = `Trackman Data (${data.pitchers} pitchers, ${data.rows} pitches):\n${data.summary}\n\nAI Interpretation:\n${data.interpretation}`;
+
+      // Build roster grouped by team for Players tab
+      trackmanRoster = {};
+      const teamsMap = data.teams || {};
+      Object.entries(teamsMap).forEach(([team, pitchers]) => {
+        trackmanRoster[team] = pitchers.map(name => ({ name, stats: data.stats[name] || {} }));
+      });
+      // If no team data came back, group everything under one fallback key
+      if (!Object.keys(trackmanRoster).length && data.stats) {
+        trackmanRoster['Pitchers'] = Object.entries(data.stats).map(([name, stats]) => ({ name, stats }));
+      }
 
       const resultEl = document.getElementById('fv-trackman-result');
       resultEl.style.display = 'block';
@@ -1858,12 +1878,13 @@ document.querySelectorAll('[data-topline]').forEach(line => {
   };
 
   // ── Players tab ───────────────────────────────────────────────────────────
-  window.filterPlayers = function () {
-    renderPlayers();
-  };
+  window.filterPlayers = function () { renderPlayers(); };
 
   function renderPlayers () {
-    if (!talentPool.length) {
+    const hasScouts   = talentPool.length > 0;
+    const hasTrackman = Object.keys(trackmanRoster).length > 0;
+
+    if (!hasScouts && !hasTrackman) {
       document.getElementById('fv-players-empty').style.display   = '';
       document.getElementById('fv-players-content').style.display = 'none';
       return;
@@ -1871,42 +1892,154 @@ document.querySelectorAll('[data-topline]').forEach(line => {
     document.getElementById('fv-players-empty').style.display   = 'none';
     document.getElementById('fv-players-content').style.display = '';
 
-    const filterText  = (document.getElementById('fv-filter-text')?.value || '').toLowerCase();
-    const filterGrade = document.getElementById('fv-filter-grade')?.value || '';
-
-    const filtered = talentPool.filter(p => {
-      const name = (p.profile?.name || p.label).toLowerCase();
-      const pos  = (p.profile?.position || '').toLowerCase();
-      if (filterText && !name.includes(filterText) && !pos.includes(filterText)) return false;
-      if (filterGrade && p.profile?.grade !== filterGrade) return false;
-      return true;
-    });
+    const filterText   = (document.getElementById('fv-filter-text')?.value   || '').toLowerCase();
+    const filterGrade  =  document.getElementById('fv-filter-grade')?.value  || '';
+    const filterSource =  document.getElementById('fv-filter-source')?.value || '';
 
     const container = document.getElementById('fv-player-cards');
-    container.innerHTML = filtered.map(p => {
-      const pr    = p.profile || {};
-      const grade = pr.grade || '?';
-      const strengths = (pr.strengths || []).slice(0, 3);
-      const concerns  = (pr.concerns  || []).slice(0, 2);
-      return `
-        <div class="card" style="padding:20px;cursor:default;">
-          <div class="card-spot"></div>
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-            <span style="font-weight:700;font-size:.92rem;flex:1;">${pr.name || p.label}</span>
-            <span class="fv-grade-badge fv-grade-${grade}">${grade}</span>
-          </div>
-          ${pr.position ? `<div style="font-size:.75rem;color:rgba(240,244,255,.4);margin-bottom:8px;">${pr.position}</div>` : ''}
-          ${pr.summary  ? `<p style="font-size:.82rem;color:rgba(240,244,255,.5);margin-bottom:10px;line-height:1.55;">${pr.summary}</p>` : ''}
-          ${strengths.length ? `<div style="font-size:.75rem;font-weight:600;color:#4ade80;margin-bottom:4px;">Strengths</div>
-            <ul style="margin:0 0 8px 14px;">${strengths.map(s=>`<li style="font-size:.78rem;color:rgba(240,244,255,.55);line-height:1.5;">${s}</li>`).join('')}</ul>` : ''}
-          ${concerns.length  ? `<div style="font-size:.75rem;font-weight:600;color:#f07080;margin-bottom:4px;">Concerns</div>
-            <ul style="margin:0 0 0 14px;">${concerns.map(c=>`<li style="font-size:.78rem;color:rgba(240,244,255,.55);line-height:1.5;">${c}</li>`).join('')}</ul>` : ''}
-        </div>`;
-    }).join('');
+    let html = '';
+    let totalShown = 0;
 
-    if (!filtered.length) {
-      container.innerHTML = '<div style="color:rgba(240,244,255,.35);font-size:.88rem;padding:20px;">No players match your filters.</div>';
+    // ── Section 1: Scouted Players ─────────────────────────────────────────
+    if (hasScouts && filterSource !== 'trackman') {
+      const filtered = talentPool.filter(p => {
+        const name = (p.profile?.name || p.label).toLowerCase();
+        const pos  = (p.profile?.position || '').toLowerCase();
+        if (filterText  && !name.includes(filterText) && !pos.includes(filterText)) return false;
+        if (filterGrade && p.profile?.grade !== filterGrade) return false;
+        return true;
+      });
+
+      if (filtered.length) {
+        totalShown += filtered.length;
+        html += `
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="width:10px;height:10px;border-radius:50%;background:#C8102E;display:inline-block;"></span>
+              <span style="font-size:.7rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+                    color:rgba(240,244,255,.5);">Scouted Players</span>
+            </div>
+            <div style="flex:1;height:1px;background:rgba(200,16,46,.2);"></div>
+            <span style="font-size:.7rem;color:rgba(240,244,255,.3);">${filtered.length} player${filtered.length !== 1 ? 's' : ''}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-bottom:36px;">
+            ${filtered.map(p => scoutCard(p)).join('')}
+          </div>`;
+      }
     }
+
+    // ── Section 2: Trackman Pitchers by Team ──────────────────────────────
+    if (hasTrackman && filterSource !== 'scouting') {
+      const teamNames = Object.keys(trackmanRoster);
+      let trackmanHtml = '';
+
+      teamNames.forEach(team => {
+        const pitchers = trackmanRoster[team].filter(p => {
+          if (filterText && !p.name.toLowerCase().includes(filterText)) return false;
+          if (filterGrade) return false; // grade filter doesn't apply to Trackman pitchers
+          return true;
+        });
+        if (!pitchers.length) return;
+        totalShown += pitchers.length;
+
+        trackmanHtml += `
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;${trackmanHtml ? 'margin-top:28px;' : ''}">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="width:10px;height:10px;border-radius:50%;background:#a5b4fc;display:inline-block;"></span>
+              <span style="font-size:.7rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+                    color:rgba(165,180,252,.7);">${team}</span>
+            </div>
+            <div style="flex:1;height:1px;background:rgba(165,180,252,.2);"></div>
+            <span style="font-size:.7rem;color:rgba(240,244,255,.3);">${pitchers.length} pitcher${pitchers.length !== 1 ? 's' : ''}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;">
+            ${pitchers.map(p => trackmanCard(p)).join('')}
+          </div>`;
+      });
+
+      if (trackmanHtml) {
+        // Trackman section header
+        html += `
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;${hasScouts && filterSource !== 'trackman' ? '' : ''}">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a5b4fc" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              <span style="font-size:.7rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+                    color:rgba(165,180,252,.5);">Trackman — Pitchers by Team</span>
+            </div>
+            <div style="flex:1;height:1px;background:rgba(165,180,252,.15);"></div>
+          </div>
+          ${trackmanHtml}`;
+      }
+    }
+
+    container.innerHTML = totalShown
+      ? html
+      : '<div style="color:rgba(240,244,255,.35);font-size:.88rem;padding:20px 0;">No players match your filters.</div>';
+  }
+
+  function scoutCard (p) {
+    const pr       = p.profile || {};
+    const grade    = pr.grade || '?';
+    const strengths = (pr.strengths || []).slice(0, 3);
+    const concerns  = (pr.concerns  || []).slice(0, 2);
+    return `
+      <div class="card" style="padding:20px;cursor:default;" data-pool-label="${pr.name || p.label}">
+        <div class="card-spot"></div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <span style="font-weight:700;font-size:.92rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${pr.name || p.label}</span>
+          <span class="fv-grade-badge fv-grade-${grade}">${grade}</span>
+        </div>
+        ${pr.position ? `<div style="font-size:.74rem;color:rgba(240,244,255,.38);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;">${pr.position}</div>` : ''}
+        ${pr.summary  ? `<p style="font-size:.82rem;color:rgba(240,244,255,.5);margin-bottom:10px;line-height:1.55;border-left:2px solid rgba(200,16,46,.3);padding-left:10px;">${pr.summary}</p>` : ''}
+        ${strengths.length ? `
+          <div style="font-size:.72rem;font-weight:700;color:#4ade80;margin-bottom:4px;text-transform:uppercase;letter-spacing:.08em;">Strengths</div>
+          <ul style="margin:0 0 8px 14px;">${strengths.map(s=>`<li style="font-size:.78rem;color:rgba(240,244,255,.55);line-height:1.5;">${s}</li>`).join('')}</ul>` : ''}
+        ${concerns.length ? `
+          <div style="font-size:.72rem;font-weight:700;color:#f07080;margin-bottom:4px;text-transform:uppercase;letter-spacing:.08em;">Concerns</div>
+          <ul style="margin:0 0 0 14px;">${concerns.map(c=>`<li style="font-size:.78rem;color:rgba(240,244,255,.55);line-height:1.5;">${c}</li>`).join('')}</ul>` : ''}
+      </div>`;
+  }
+
+  function trackmanCard (p) {
+    const s   = p.stats || {};
+    const mix = Object.entries(s.pitch_mix || {}).slice(0, 4);
+    return `
+      <div class="card" style="padding:18px 20px;cursor:default;">
+        <div class="card-spot"></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a5b4fc" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <span style="font-weight:700;font-size:.9rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</span>
+          <span style="font-size:.68rem;font-weight:600;padding:2px 8px;border-radius:99px;
+            background:rgba(165,180,252,.1);border:1px solid rgba(165,180,252,.25);color:#a5b4fc;">P</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+          ${s.avg_velo != null ? `
+            <div style="background:#0a1120;border-radius:7px;padding:8px 10px;text-align:center;">
+              <div style="font-size:1rem;font-weight:800;color:#a5b4fc;font-family:'Fira Code',monospace;">${s.avg_velo}</div>
+              <div style="font-size:.6rem;color:rgba(240,244,255,.35);text-transform:uppercase;letter-spacing:.06em;">Avg mph</div>
+            </div>` : ''}
+          ${s.max_velo != null ? `
+            <div style="background:#0a1120;border-radius:7px;padding:8px 10px;text-align:center;">
+              <div style="font-size:1rem;font-weight:800;color:#f0f4ff;font-family:'Fira Code',monospace;">${s.max_velo}</div>
+              <div style="font-size:.6rem;color:rgba(240,244,255,.35);text-transform:uppercase;letter-spacing:.06em;">Max mph</div>
+            </div>` : ''}
+          ${s.avg_spin != null ? `
+            <div style="background:#0a1120;border-radius:7px;padding:8px 10px;text-align:center;">
+              <div style="font-size:1rem;font-weight:800;color:#f0f4ff;font-family:'Fira Code',monospace;">${Math.round(s.avg_spin)}</div>
+              <div style="font-size:.6rem;color:rgba(240,244,255,.35);text-transform:uppercase;letter-spacing:.06em;">Spin rpm</div>
+            </div>` : ''}
+        </div>
+        ${mix.length ? `
+          <div style="font-size:.7rem;font-weight:700;color:rgba(240,244,255,.4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Pitch Mix</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;">
+            ${mix.map(([type, count]) => `
+              <span style="padding:2px 8px;border-radius:99px;background:#172033;
+                border:1px solid rgba(165,180,252,.15);font-size:.72rem;color:rgba(240,244,255,.6);">
+                ${type} <span style="color:#a5b4fc;font-weight:700;">${count}</span>
+              </span>`).join('')}
+          </div>` : ''}
+        <div style="font-size:.7rem;color:rgba(240,244,255,.25);margin-top:10px;">${s.pitches} pitches tracked</div>
+      </div>`;
   }
 
   // ── Trackman PDF Export ───────────────────────────────────────────────────
