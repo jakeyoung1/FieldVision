@@ -16,11 +16,17 @@ You help interpret player data, Trackman metrics, and scouting reports. Speak pl
 need actionable insights, not jargon."""
 
 GRADE_LABELS = {
-    "A": "Elite prospect",
-    "B": "Strong candidate",
-    "C": "Developmental",
-    "D": "Needs significant work",
-    "F": "Not recommended",
+    "A":  "Elite prospect",
+    "A-": "Near-elite prospect",
+    "B+": "Strong candidate, above average",
+    "B":  "Solid candidate",
+    "B-": "Above average with questions",
+    "C+": "Average with upside",
+    "C":  "Average / developmental",
+    "C-": "Below average with some tools",
+    "D+": "Significant concerns, one redeeming tool",
+    "D":  "Needs significant work",
+    "F":  "Not recommended",
 }
 
 
@@ -43,7 +49,7 @@ Format your response as:
 ## Key Strengths
 ## Areas of Concern
 ## Historical Comparison (if context available)
-## Recommendation & Grade (A/B/C/D/F)"""
+## Recommendation & Grade (use full plus/minus scale: A, A-, B+, B, B-, C+, C, C-, D+, D, F)"""
 
     client = _client()
     resp = client.messages.create(
@@ -77,7 +83,8 @@ def extract_player_profile(label: str, insights_text: str) -> dict:
     """Extract a structured JSON player profile from analysis text."""
     prompt = f"""Extract a structured player profile from this scouting analysis.
 Return ONLY a valid JSON object with exactly these keys:
-{{"name": "string or null", "position": "string or null", "grade": "A/B/C/D/F",
+{{"name": "string or null", "position": "string or null",
+  "grade": "use full plus/minus scale: A, A-, B+, B, B-, C+, C, C-, D+, D, or F",
   "strengths": ["list","of","strings"], "concerns": ["list","of","strings"],
   "summary": "1-2 sentence summary"}}
 
@@ -129,22 +136,29 @@ CHAT REPLY:
 {reply[:2500]}
 
 GRADING INSTRUCTIONS — follow in this exact order:
-1. If the SCOUTING REPORTS above contain an explicit grade (A/B/C/D/F) for this player, \
-use THAT grade. Do not change it.
-2. If no prior grade exists, assign based on the evaluation language in the chat reply:
-   A — elite, exceptional, best on the field, standout, top prospect, dominant
-   B — above average, solid, strong, reliable, performed well
-   C — average, inconsistent, developing, mixed results, needs refinement
-   D — below average, struggled, weak, poor performance, concerning
-   F — not recommended, significant issues across the board
-3. B is NOT a default. Most players are C. Only use B if the language clearly indicates \
-above-average performance. Only use A if the language is genuinely exceptional.
-4. Differentiate grades across players in the same reply — if one player is described as \
-better than another, their grades must reflect that difference.
+1. If the SCOUTING REPORTS above contain an explicit grade for this player, \
+use THAT grade exactly. Do not change it.
+2. If no prior grade exists, assign using the full plus/minus scale based on evaluation language:
+   A   — generational, elite at this level, can't-miss prospect
+   A-  — elite with one minor question, clear top prospect
+   B+  — above average, stands out vs. peers, has a plus tool
+   B   — solid performer, above average overall, reliable
+   B-  — above average but inconsistent or one clear weakness
+   C+  — average with upside, shows flashes, developing tool
+   C   — average, nothing jumps out, fits the level
+   C-  — below average overall but shows something worth watching
+   D+  — struggles in most areas, one redeeming quality
+   D   — significant issues, below the level
+   F   — not recommended, does not project
+3. C is the baseline for an average player. B is above average. Most players are C or C+/C-.
+4. When multiple players are in the same reply, their grades MUST differ if the language \
+implies one outperformed another. Do not assign the same grade to everyone.
+5. Use plus/minus to capture nuance — B+ and B- are different players.
 
 Return ONLY a valid JSON array — no explanation, no markdown fences.
 Each element must have exactly these keys:
-{{"name": "Full Name", "position": "string or null", "grade": "A/B/C/D/F",
+{{"name": "Full Name", "position": "string or null",
+  "grade": "one of: A, A-, B+, B, B-, C+, C, C-, D+, D, F",
   "strengths": ["list","of","strings"], "concerns": ["list","of","strings"],
   "summary": "1-2 sentence summary based on the evaluation"}}
 

@@ -812,10 +812,11 @@
                   style="padding:9px 14px;border-radius:8px;background:#0f1624;
                          border:1px solid rgba(255,255,255,.1);color:#f0f4ff;font-size:.85rem;outline:none;">
             <option value="">All Grades</option>
-            <option value="A">A — Elite</option>
-            <option value="B">B — Strong</option>
-            <option value="C">C — Developmental</option>
-            <option value="D">D — Needs Work</option>
+            <option value="A">A  — Elite</option>
+            <option value="B">B  — Above Average</option>
+            <option value="C">C  — Average</option>
+            <option value="D">D  — Below Average</option>
+            <option value="F">F  — Not Recommended</option>
           </select>
           <select id="fv-filter-source" onchange="filterPlayers()"
                   style="padding:9px 14px;border-radius:8px;background:#0f1624;
@@ -901,12 +902,13 @@
 .fv-report-md li { font-size: .87rem; color: rgba(240,244,255,.65); line-height: 1.7; margin-left: 18px; list-style: disc; }
 .fv-report-md strong { color: #f0f4ff; }
 
-.fv-grade-badge { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: .7rem; font-weight: 700; }
-.fv-grade-A { background: rgba(34,197,94,.15); color: #4ade80; border: 1px solid rgba(34,197,94,.3); }
+.fv-grade-badge { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: .7rem; font-weight: 700; letter-spacing:.03em; }
+/* Grade colors by letter family — plus/minus handled via JS gradeClass() helper */
+.fv-grade-A { background: rgba(34,197,94,.18);  color: #4ade80; border: 1px solid rgba(34,197,94,.35); }
 .fv-grade-B { background: rgba(99,102,241,.15); color: #a5b4fc; border: 1px solid rgba(99,102,241,.3); }
-.fv-grade-C { background: rgba(245,158,11,.12); color: #fbbf24; border: 1px solid rgba(245,158,11,.25); }
-.fv-grade-D { background: rgba(200,16,46,.12); color: #f07080; border: 1px solid rgba(200,16,46,.25); }
-.fv-grade-F { background: rgba(100,100,100,.15); color: #9ca3af; border: 1px solid rgba(100,100,100,.25); }
+.fv-grade-C { background: rgba(245,158,11,.13); color: #fbbf24; border: 1px solid rgba(245,158,11,.28); }
+.fv-grade-D { background: rgba(200,16,46,.12);  color: #f07080; border: 1px solid rgba(200,16,46,.25); }
+.fv-grade-F { background: rgba(100,100,100,.15);color: #9ca3af; border: 1px solid rgba(100,100,100,.25); }
 
 @media (max-width: 640px) { .fv-app-grid { grid-template-columns: 1fr !important; } }
 </style>
@@ -1510,6 +1512,19 @@ document.querySelectorAll('[data-topline]').forEach(line => {
   // ── Config ──────────────────────────────────────────────────────────────
   const API_BASE = window.FV_API_BASE || '';  // set by server; empty = same origin
 
+  // ── Grade helpers ────────────────────────────────────────────────────────
+  // CSS class names can't contain + or -, so we map to the letter family color.
+  function gradeClass (grade) {
+    if (!grade || grade === '?') return 'fv-grade-C';
+    const letter = grade[0].toUpperCase();
+    return ['A','B','C','D','F'].includes(letter) ? `fv-grade-${letter}` : 'fv-grade-C';
+  }
+  // Filter match: dropdown stores letter prefix (A/B/C/D/F), grade may be B+/B-/etc.
+  function gradeMatches (grade, filter) {
+    if (!filter) return true;
+    return (grade || '').toUpperCase().startsWith(filter.toUpperCase());
+  }
+
   // ── State ───────────────────────────────────────────────────────────────
   let selectedFiles       = [];
   let trackmanFile        = null;
@@ -1678,7 +1693,7 @@ document.querySelectorAll('[data-topline]').forEach(line => {
         <div style="margin-bottom:24px;" data-report-label="${p.name || r.label}" data-report-html="${encodeURIComponent(reportHtml)}" data-report-text="${encodeURIComponent(r.report)}">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
             <span style="font-weight:700;font-size:.95rem;">${p.name || r.label}</span>
-            <span class="fv-grade-badge fv-grade-${grade}">${grade}</span>
+            <span class="fv-grade-badge ${gradeClass(grade)}">${grade}</span>
             ${p.position ? `<span style="font-size:.75rem;color:rgba(240,244,255,.4);">${p.position}</span>` : ''}
             <button onclick="exportReportPDF(this)" style="margin-left:auto;padding:4px 12px;border-radius:5px;
               background:rgba(200,16,46,.12);border:1px solid rgba(200,16,46,.3);color:#C8102E;
@@ -1911,7 +1926,7 @@ document.querySelectorAll('[data-topline]').forEach(line => {
         const name = (p.profile?.name || p.label).toLowerCase();
         const pos  = (p.profile?.position || '').toLowerCase();
         if (filterText  && !name.includes(filterText) && !pos.includes(filterText)) return false;
-        if (filterGrade && p.profile?.grade !== filterGrade) return false;
+        if (filterGrade && !gradeMatches(p.profile?.grade, filterGrade)) return false;
         return true;
       });
 
@@ -1992,7 +2007,7 @@ document.querySelectorAll('[data-topline]').forEach(line => {
         <div class="card-spot"></div>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
           <span style="font-weight:700;font-size:.92rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${pr.name || p.label}</span>
-          <span class="fv-grade-badge fv-grade-${grade}">${grade}</span>
+          <span class="fv-grade-badge ${gradeClass(grade)}">${grade}</span>
         </div>
         ${pr.position ? `<div style="font-size:.74rem;color:rgba(240,244,255,.38);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;">${pr.position}</div>` : ''}
         ${pr.summary  ? `<p style="font-size:.82rem;color:rgba(240,244,255,.5);margin-bottom:10px;line-height:1.55;border-left:2px solid rgba(200,16,46,.3);padding-left:10px;">${pr.summary}</p>` : ''}
@@ -2111,6 +2126,9 @@ document.querySelectorAll('[data-topline]').forEach(line => {
     const reportCards = document.querySelectorAll('[data-report-label]');
     if (!reportCards.length) return;
 
+    // Grade token: letter + optional +/- (e.g. B+, A-, C)
+    const G = '[A-F][+\\-]?';
+
     let updated = false;
     reportCards.forEach(card => {
       const label  = card.dataset.reportLabel;
@@ -2118,13 +2136,13 @@ document.querySelectorAll('[data-topline]').forEach(line => {
       if (!player?.profile) return;
 
       const patterns = [
-        /\bgrade[d]?\s*(?:is\s*|:?\s*)([A-F])\b/i,
-        /\b([A-F])\s*[-–—]\s*(?:grade|rated|prospect|candidate)/i,
-        /\boverall[:\s]+([A-F])\b/i,
-        /\bupgrad(?:e|ed|ing)(?:\s+to)?\s+(?:an?\s+)?([A-F])\b/i,
-        /\bI(?:'d| would)\s+(?:give|rate|grade|assign)\s+(?:this\s+)?(?:player\s+)?(?:an?\s+)?([A-F])\b/i,
-        /\bGrade:\s*([A-F])\b/i,
-        /\bnow\s+(?:an?\s+)?([A-F])\b/i,
+        new RegExp(`\\bgrade[d]?\\s*(?:is\\s*|:?\\s*)(${G})\\b`, 'i'),
+        new RegExp(`\\b(${G})\\s*[-–—]\\s*(?:grade|rated|prospect|candidate)`, 'i'),
+        new RegExp(`\\boverall[:\\s]+(${G})\\b`, 'i'),
+        new RegExp(`\\bupgrad(?:e|ed|ing)(?:\\s+to)?\\s+(?:an?\\s+)?(${G})\\b`, 'i'),
+        new RegExp(`\\bI(?:'d| would)\\s+(?:give|rate|grade|assign)\\s+(?:this\\s+)?(?:player\\s+)?(?:an?\\s+)?(${G})\\b`, 'i'),
+        new RegExp(`\\bGrade:\\s*(${G})\\b`, 'i'),
+        new RegExp(`\\bnow\\s+(?:an?\\s+)?(${G})\\b`, 'i'),
       ];
 
       for (const pat of patterns) {
@@ -2135,7 +2153,7 @@ document.querySelectorAll('[data-topline]').forEach(line => {
             player.profile.grade = newGrade;
             const badge = card.querySelector('.fv-grade-badge');
             if (badge) {
-              badge.className = `fv-grade-badge fv-grade-${newGrade}`;
+              badge.className = `fv-grade-badge ${gradeClass(newGrade)}`;
               badge.textContent = newGrade;
             }
             updated = true;
