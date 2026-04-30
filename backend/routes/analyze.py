@@ -1,10 +1,28 @@
 """POST /api/analyze — single or batch scouting note analysis."""
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
 from backend.services import claude, files, rag
 
 router = APIRouter()
+
+
+class ExtractPlayersRequest(BaseModel):
+    reply: str
+    context: str = ""
+
+
+@router.post("/extract-players")
+async def extract_players(req: ExtractPlayersRequest):
+    """Extract structured player profiles from a chat reply."""
+    if not req.reply.strip():
+        return JSONResponse({"profiles": []})
+    try:
+        profiles = claude.extract_players_from_chat(req.reply, req.context)
+        return JSONResponse({"profiles": profiles})
+    except Exception as e:
+        raise HTTPException(500, f"Server error: {str(e)}")
 
 
 @router.post("/analyze")

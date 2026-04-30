@@ -637,9 +637,12 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         Trackman
       </button>
-      <button class="fv-tab" data-tab="players" onclick="switchTab('players')">
+      <button class="fv-tab" data-tab="players" onclick="switchTab('players')" id="fv-tab-players-btn">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         Players
+        <span id="fv-players-badge" style="display:none;min-width:18px;height:18px;
+          border-radius:99px;background:#C8102E;color:#fff;font-size:.62rem;font-weight:700;
+          padding:0 5px;line-height:18px;text-align:center;">0</span>
       </button>
       <button class="fv-tab" data-tab="combined" onclick="switchTab('combined')">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="9" y1="14" x2="13" y2="14"/></svg>
@@ -1614,12 +1617,13 @@ document.querySelectorAll('[data-topline]').forEach(line => {
 
       renderReports(data.results);
 
-      // Add to talent pool
+      // Add to talent pool (grade lock: skip if already exists)
       data.results.forEach(r => {
         if (!talentPool.find(p => p.label === r.label)) {
           talentPool.push(r);
         }
       });
+      updatePlayersTabBadge(0);
 
     } catch (err) {
       showReportError(err.message);
@@ -1752,7 +1756,8 @@ document.querySelectorAll('[data-topline]').forEach(line => {
       thinkingEl.remove();
       chatHistory.push({ role: 'assistant', content: data.reply });
       renderChatMessage('assistant', data.reply);
-      syncProfileFromChat(data.reply);
+      syncProfileFromChat(data.reply, text);
+      extractAndAddPlayers(data.reply, currentReport);
     } catch (err) {
       thinkingEl.remove();
       renderChatMessage('assistant', `Error: ${err.message}`);
@@ -2095,8 +2100,14 @@ document.querySelectorAll('[data-topline]').forEach(line => {
     setTimeout(() => { win.print(); }, 400);
   };
 
-  // ── Grade sync: update talent pool when chat mentions a new grade ──────────
-  function syncProfileFromChat (reply) {
+  // ── Grade sync: only fires when user explicitly requests a re-grade ─────────
+  // (e.g. "change grade to A", "upgrade Smith to B", "re-grade this player")
+  // Grades are otherwise locked once assigned — extraction handles new players.
+  function syncProfileFromChat (reply, userMessage) {
+    // Only proceed if the user's own message contains an explicit re-grade request
+    const reGradeTriggers = /\b(re.?grade|change.*grade|upgrade|downgrade|new grade|grade.*to\s+[A-F])\b/i;
+    if (!userMessage || !reGradeTriggers.test(userMessage)) return;
+
     const reportCards = document.querySelectorAll('[data-report-label]');
     if (!reportCards.length) return;
 
@@ -2106,16 +2117,14 @@ document.querySelectorAll('[data-topline]').forEach(line => {
       const player = talentPool.find(p => (p.profile?.name || p.label) === label || p.label === label);
       if (!player?.profile) return;
 
-      // Grade patterns to detect in the AI reply
       const patterns = [
         /\bgrade[d]?\s*(?:is\s*|:?\s*)([A-F])\b/i,
         /\b([A-F])\s*[-–—]\s*(?:grade|rated|prospect|candidate)/i,
         /\boverall[:\s]+([A-F])\b/i,
         /\bupgrad(?:e|ed|ing)(?:\s+to)?\s+(?:an?\s+)?([A-F])\b/i,
         /\bI(?:'d| would)\s+(?:give|rate|grade|assign)\s+(?:this\s+)?(?:player\s+)?(?:an?\s+)?([A-F])\b/i,
-        /\b(?:an?\s+)?([A-F])\s+prospect\b/i,
         /\bGrade:\s*([A-F])\b/i,
-        /\b([A-F])\s+grade\b/i,
+        /\bnow\s+(?:an?\s+)?([A-F])\b/i,
       ];
 
       for (const pat of patterns) {
@@ -2124,7 +2133,6 @@ document.querySelectorAll('[data-topline]').forEach(line => {
           const newGrade = m[1].toUpperCase();
           if (player.profile.grade !== newGrade) {
             player.profile.grade = newGrade;
-            // Update badge in report panel live
             const badge = card.querySelector('.fv-grade-badge');
             if (badge) {
               badge.className = `fv-grade-badge fv-grade-${newGrade}`;
@@ -2137,9 +2145,72 @@ document.querySelectorAll('[data-topline]').forEach(line => {
       }
     });
 
-    // Refresh Players tab if it's currently open
     if (updated && document.querySelector('.fv-tab.active')?.dataset.tab === 'players') {
       renderPlayers();
+    }
+  }
+
+  // ── Extract players from chat reply and add to talent pool ────────────────
+  async function extractAndAddPlayers (reply, context) {
+    if (!reply || reply.length < 30) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/extract-players`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reply, context: (context || '').slice(0, 3000) }),
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!data.profiles?.length) return;
+
+      let added = 0;
+      data.profiles.forEach(profile => {
+        const name = (profile.name || '').trim();
+        if (!name) return;
+        // Grade lock: skip if already in pool (match by name or label, case-insensitive)
+        const exists = talentPool.find(p =>
+          (p.profile?.name || p.label || '').toLowerCase() === name.toLowerCase()
+        );
+        if (exists) return;
+
+        talentPool.push({
+          label:   name,
+          report:  reply,   // chat reply serves as the evidence text
+          profile: {
+            name:      profile.name,
+            position:  profile.position  || null,
+            grade:     profile.grade     || 'C',
+            strengths: profile.strengths || [],
+            concerns:  profile.concerns  || [],
+            summary:   profile.summary   || '',
+          },
+          fromChat: true,
+        });
+        added++;
+      });
+
+      if (added > 0) {
+        updatePlayersTabBadge(added);
+        // If Players tab is already open, refresh it
+        if (document.querySelector('.fv-tab.active')?.dataset.tab === 'players') {
+          renderPlayers();
+        }
+      }
+    } catch (_) {
+      // Silent fail — don't interrupt chat UX
+    }
+  }
+
+  function updatePlayersTabBadge (newCount) {
+    const badge = document.getElementById('fv-players-badge');
+    if (!badge) return;
+    const total = talentPool.length;
+    badge.textContent = total;
+    badge.style.display = total > 0 ? 'inline-block' : 'none';
+    // Flash the badge briefly to signal new additions
+    if (newCount > 0) {
+      badge.style.background = '#4ade80';
+      setTimeout(() => { badge.style.background = '#C8102E'; }, 1800);
     }
   }
 
@@ -2242,6 +2313,7 @@ document.querySelectorAll('[data-topline]').forEach(line => {
       thinking.remove();
       combinedChatHistory.push({ role: 'assistant', content: data.reply });
       renderCombinedMessage('assistant', data.reply);
+      extractAndAddPlayers(data.reply, sessionReports.join('\n\n---\n\n'));
     } catch (err) {
       thinking.remove();
       renderCombinedMessage('assistant', `Error: ${err.message}`);

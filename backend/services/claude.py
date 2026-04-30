@@ -111,6 +111,56 @@ INSIGHTS:
     }
 
 
+def extract_players_from_chat(reply: str, context: str = "") -> list[dict]:
+    """
+    Given an AI chat reply (and optional scouting context), extract structured
+    profiles for any players that are meaningfully evaluated — not just named.
+    Returns a list of profile dicts identical in shape to extract_player_profile().
+    """
+    context_block = f"SCOUTING CONTEXT (use for grade calibration):\n{context[:2500]}\n\n" if context else ""
+    prompt = f"""{context_block}Read the following text and extract profiles for any baseball players
+that are meaningfully evaluated (ranked, graded, described with strengths/weaknesses, or compared).
+Do NOT include players who are only mentioned by name in passing with no evaluation.
+
+TEXT:
+{reply[:2500]}
+
+Return ONLY a valid JSON array — no explanation, no markdown fences.
+Each element must have exactly these keys:
+{{"name": "Full Name", "position": "string or null", "grade": "A/B/C/D/F",
+  "strengths": ["list","of","strings"], "concerns": ["list","of","strings"],
+  "summary": "1-2 sentence summary"}}
+
+Base the grade on any explicit grade mentioned, or infer from the evaluation language
+(elite/standout → A, solid/strong → B, average/developing → C, below average → D).
+Return [] if no players are meaningfully evaluated."""
+
+    client = _client()
+    resp = client.messages.create(
+        model=MODEL,
+        max_tokens=700,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    raw = resp.content[0].text.strip()
+    raw = re.sub(r"^```(?:json)?\s*", "", raw)
+    raw = re.sub(r"\s*```$", "", raw)
+
+    try:
+        result = json.loads(raw)
+        if isinstance(result, list):
+            return result
+    except json.JSONDecodeError:
+        m = re.search(r"\[.*\]", raw, re.DOTALL)
+        if m:
+            try:
+                result = json.loads(m.group())
+                if isinstance(result, list):
+                    return result
+            except Exception:
+                pass
+    return []
+
+
 def interpret_pitch_metrics(summary: str, focus: str = "") -> str:
     """Translate Trackman pitch metrics into plain-language coach explanation."""
     focus_line = f"Focus area: {focus}" if focus else ""
