@@ -8,6 +8,12 @@ from backend.services import claude, files, rag
 router = APIRouter()
 
 
+def _is_game_document(text: str) -> bool:
+    """Return True if the text looks like a game play-by-play or box score."""
+    tl = text.lower()
+    return ("batting" in tl and "inning" in tl) or ("score by innings" in tl)
+
+
 class ExtractPlayersRequest(BaseModel):
     reply: str
     context: str = ""
@@ -51,18 +57,31 @@ async def analyze(
         for label, text in player_map.items():
             if not text.strip():
                 continue
-            # RAG context
-            context = rag.context_block(text[:500])
-            # Analysis
-            report = claude.analyze_notes(text, context)
-            # Profile extraction
-            profile = claude.extract_player_profile(label, report)
-            results.append({
-                "label": label,
-                "report": report,
-                "profile": profile,
-                "context_used": bool(context),
-            })
+
+            if _is_game_document(text):
+                # Game play-by-play / box score — extract top 3 per team (6 total)
+                game_profiles = claude.analyze_game_document(text)
+                for gp in game_profiles:
+                    player_name = gp.get("name", label)
+                    team = gp.get("team", "")
+                    display_label = f"{team} — {player_name}" if team else player_name
+                    results.append({
+                        "label": display_label,
+                        "report": claude.profile_to_report(gp),
+                        "profile": gp,
+                        "context_used": False,
+                    })
+            else:
+                # Standard individual scouting note
+                context = rag.context_block(text[:500])
+                report = claude.analyze_notes(text, context)
+                profile = claude.extract_player_profile(label, report)
+                results.append({
+                    "label": label,
+                    "report": report,
+                    "profile": profile,
+                    "context_used": bool(context),
+                })
 
         return JSONResponse({"results": results, "count": len(results)})
 

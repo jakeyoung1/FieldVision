@@ -190,6 +190,96 @@ Return [] if no players are meaningfully evaluated."""
     return []
 
 
+def profile_to_report(profile: dict) -> str:
+    """Build a brief markdown report from a game player profile dict."""
+    name      = profile.get("name", "Unknown")
+    pos       = profile.get("position") or ""
+    team      = profile.get("team") or ""
+    grade     = profile.get("grade", "C")
+    summary   = profile.get("summary", "")
+    strengths = profile.get("strengths", [])
+    concerns  = profile.get("concerns", [])
+    header = f"{name} ({pos}) — {team}" if (pos or team) else name
+    parts = [f"## Player Overview\n{header}"]
+    if strengths:
+        parts.append("## Key Strengths\n" + "\n".join(f"- {s}" for s in strengths))
+    if concerns:
+        parts.append("## Areas of Concern\n" + "\n".join(f"- {c}" for c in concerns))
+    label = GRADE_LABELS.get(grade, "")
+    parts.append(
+        f"## Recommendation & Grade\n**Grade: {grade}**"
+        + (f" — {label}" if label else "")
+        + (f"\n\n{summary}" if summary else "")
+    )
+    return "\n\n".join(parts)
+
+
+def analyze_game_document(text: str) -> list[dict]:
+    """
+    Given a full game play-by-play or box score, return the top 3 performers
+    per team (6 total) as structured player profile dicts.
+    """
+    prompt = f"""Read this baseball game document carefully. It is a full play-by-play or box score.
+
+GAME DOCUMENT:
+{text[:5000]}
+
+Step 1 — Identify BOTH teams and ALL players mentioned for each team.
+Step 2 — Tally each player's specific contributions from the document:
+  Batters: hits, extra-base hits (2B/3B/HR), RBIs, runs scored, walks, strikeouts, stolen bases
+  Pitchers: innings pitched, strikeouts, runs/hits allowed
+Step 3 — Rank players within each team by their game impact.
+Step 4 — Select the TOP 3 PERFORMERS from EACH TEAM — exactly 6 players total.
+  Priority: HR > multi-RBI hit > multiple hits > extra-base hit > walk/OBP > pitching > nothing
+
+Grade each player on their performance in THIS game using the full scale.
+Grades MUST differ within each team — not everyone played equally:
+  A   — Dominant: HR + multiple RBIs, or pitching shutout
+  A-  — Excellent: 2+ hits with RBI, or HR, clear game-changer
+  B+  — Good: 2 hits or 1 XBH with positive contribution
+  B   — Solid: 1-2 hits, reached base multiple times
+  B-  — Decent: 1 hit + 1 walk, or consistent contact
+  C+  — Average with a positive: 1 hit or 2 walks
+  C   — Average baseline: reached base once, mostly outs
+  C-  — Below average: 0 hits, 1 walk, quiet game
+  D+  — Poor: 0 hits, 2+ Ks, one small positive
+  D   — Very poor: 0 hits, multiple Ks, no contribution
+  F   — Did not contribute in any meaningful way
+
+Return ONLY a valid JSON array of exactly 6 objects. No markdown fences, no explanation:
+[{{"name": "Last, First", "position": "position abbreviation or null",
+  "team": "team name exactly as shown in document",
+  "grade": "letter grade with plus/minus if applicable",
+  "strengths": ["specific contributions from THIS game only"],
+  "concerns": ["specific weaknesses from THIS game only"],
+  "summary": "1-2 sentences on this player's performance in this specific game"}}]"""
+
+    client = _client()
+    resp = client.messages.create(
+        model=MODEL,
+        max_tokens=1400,
+        system=SYSTEM_SCOUT,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    raw = resp.content[0].text.strip()
+    raw = re.sub(r"^```(?:json)?\s*", "", raw)
+    raw = re.sub(r"\s*```$", "", raw)
+    try:
+        result = json.loads(raw)
+        if isinstance(result, list):
+            return result
+    except json.JSONDecodeError:
+        m = re.search(r"\[.*\]", raw, re.DOTALL)
+        if m:
+            try:
+                result = json.loads(m.group())
+                if isinstance(result, list):
+                    return result
+            except Exception:
+                pass
+    return []
+
+
 def interpret_pitch_metrics(summary: str, focus: str = "") -> str:
     """Translate Trackman pitch metrics into plain-language coach explanation."""
     focus_line = f"Focus area: {focus}" if focus else ""

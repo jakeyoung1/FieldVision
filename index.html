@@ -2009,7 +2009,7 @@ document.querySelectorAll('[data-topline]').forEach(line => {
           <span style="font-weight:700;font-size:.92rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${pr.name || p.label}</span>
           <span class="fv-grade-badge ${gradeClass(grade)}">${grade}</span>
         </div>
-        ${pr.position ? `<div style="font-size:.74rem;color:rgba(240,244,255,.38);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;">${pr.position}</div>` : ''}
+        ${(pr.position || pr.team) ? `<div style="font-size:.74rem;color:rgba(240,244,255,.38);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;">${[pr.position, pr.team].filter(Boolean).join(' · ')}</div>` : ''}
         ${pr.summary  ? `<p style="font-size:.82rem;color:rgba(240,244,255,.5);margin-bottom:10px;line-height:1.55;border-left:2px solid rgba(200,16,46,.3);padding-left:10px;">${pr.summary}</p>` : ''}
         ${strengths.length ? `
           <div style="font-size:.72rem;font-weight:700;color:#4ade80;margin-bottom:4px;text-transform:uppercase;letter-spacing:.08em;">Strengths</div>
