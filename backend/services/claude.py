@@ -232,19 +232,20 @@ Step 3 — Rank players within each team by their game impact.
 Step 4 — Select the TOP 3 PERFORMERS from EACH TEAM — exactly 6 players total.
   Priority: HR > multi-RBI hit > multiple hits > extra-base hit > walk/OBP > pitching > nothing
 
-Grade each player on their performance in THIS game using the full scale.
-Grades MUST differ within each team — not everyone played equally:
-  A   — Dominant: HR + multiple RBIs, or pitching shutout
-  A-  — Excellent: 2+ hits with RBI, or HR, clear game-changer
-  B+  — Good: 2 hits or 1 XBH with positive contribution
-  B   — Solid: 1-2 hits, reached base multiple times
-  B-  — Decent: 1 hit + 1 walk, or consistent contact
-  C+  — Average with a positive: 1 hit or 2 walks
-  C   — Average baseline: reached base once, mostly outs
-  C-  — Below average: 0 hits, 1 walk, quiet game
-  D+  — Poor: 0 hits, 2+ Ks, one small positive
-  D   — Very poor: 0 hits, multiple Ks, no contribution
-  F   — Did not contribute in any meaningful way
+Grade each player on their performance in THIS game. C is the baseline for an average game.
+Grades MUST differ within each team — not everyone played equally.
+Be conservative: a solo HR in a lopsided loss is NOT an A-. Context matters.
+  A   — Generational game: 3+ RBIs including HR, or completely dominated (pitcher)
+  A-  — Elite game: HR + 2+ RBI, or 3+ hits with multiple RBIs, shaped the outcome
+  B+  — Strong: solo HR, or 2 hits + 1 RBI, clearly above average today
+  B   — Solid: 2 hits, or 1 hit + 1 RBI, consistent positive at-bats
+  B-  — Above average: 1-2 hits with no RBI, or 1 hit + walk, productive
+  C+  — Slightly above: 1 hit or 2 walks, one positive moment otherwise quiet
+  C   — Average (baseline): reached base once, routine game, nothing notable
+  C-  — Below average: 0 hits, 1 walk, quiet game, mild negative plays
+  D+  — Poor: 0 hits, 2+ Ks, baserunning mistake, but one small positive
+  D   — Very poor: 0 hits, multiple Ks, no contribution, hurt the team
+  F   — Did not contribute in any way; actively hurt team performance
 
 Return ONLY a valid JSON array of exactly 6 objects. No markdown fences, no explanation:
 [{{"name": "Last, First", "position": "position abbreviation or null",
