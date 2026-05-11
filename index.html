@@ -1852,15 +1852,22 @@ document.querySelectorAll('[data-topline]').forEach(line => {
       trackmanExportData = data;
       trackmanContext = `Trackman Data (${data.pitchers} pitchers, ${data.rows} pitches):\n${data.summary}\n\nAI Interpretation:\n${data.interpretation}`;
 
-      // Build roster grouped by team for Players tab
+      // Build roster grouped by team for Players tab (merge grade data in)
       trackmanRoster = {};
-      const teamsMap = data.teams || {};
+      const teamsMap      = data.teams || {};
+      const pitcherGrades = data.pitcher_grades || {};
       Object.entries(teamsMap).forEach(([team, pitchers]) => {
-        trackmanRoster[team] = pitchers.map(name => ({ name, stats: data.stats[name] || {} }));
+        trackmanRoster[team] = pitchers.map(name => ({
+          name,
+          stats: data.stats[name] || {},
+          ...(pitcherGrades[name] || {}),
+        }));
       });
       // If no team data came back, group everything under one fallback key
       if (!Object.keys(trackmanRoster).length && data.stats) {
-        trackmanRoster['Pitchers'] = Object.entries(data.stats).map(([name, stats]) => ({ name, stats }));
+        trackmanRoster['Pitchers'] = Object.entries(data.stats).map(([name, stats]) => ({
+          name, stats, ...(pitcherGrades[name] || {}),
+        }));
       }
 
       const resultEl = document.getElementById('fv-trackman-result');
@@ -2021,17 +2028,35 @@ document.querySelectorAll('[data-topline]').forEach(line => {
   }
 
   function trackmanCard (p) {
-    const s   = p.stats || {};
-    const mix = Object.entries(s.pitch_mix || {}).slice(0, 4);
+    const s     = p.stats || {};
+    const mix   = Object.entries(s.pitch_mix || {}).slice(0, 4);
+    const grade = p.grade || null;
+    const hasOutcomes = s.strikeouts != null;
     return `
       <div class="card" style="padding:18px 20px;cursor:default;">
         <div class="card-spot"></div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a5b4fc" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
           <span style="font-weight:700;font-size:.9rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</span>
-          <span style="font-size:.68rem;font-weight:600;padding:2px 8px;border-radius:99px;
-            background:rgba(165,180,252,.1);border:1px solid rgba(165,180,252,.25);color:#a5b4fc;">P</span>
+          ${grade
+            ? `<span class="fv-grade-badge ${gradeClass(grade)}">${grade}</span>`
+            : `<span style="font-size:.68rem;font-weight:600;padding:2px 8px;border-radius:99px;background:rgba(165,180,252,.1);border:1px solid rgba(165,180,252,.25);color:#a5b4fc;">P</span>`}
         </div>
+        ${p.summary ? `<p style="font-size:.82rem;color:rgba(240,244,255,.5);margin-bottom:10px;line-height:1.55;border-left:2px solid rgba(165,180,252,.3);padding-left:10px;">${p.summary}</p>` : ''}
+        ${hasOutcomes ? `
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:10px;">
+          ${[
+            ['IP',  s.innings_pitched ?? '—'],
+            ['K',   s.strikeouts ?? 0],
+            ['BB',  s.walks ?? 0],
+            ['H',   s.hits_allowed ?? 0],
+            ['R',   s.runs_scored ?? 0],
+          ].map(([label, val]) => `
+            <div style="background:#0a1120;border-radius:7px;padding:6px 8px;text-align:center;">
+              <div style="font-size:.95rem;font-weight:800;color:#a5b4fc;font-family:'Fira Code',monospace;">${val}</div>
+              <div style="font-size:.58rem;color:rgba(240,244,255,.35);text-transform:uppercase;letter-spacing:.06em;">${label}</div>
+            </div>`).join('')}
+        </div>` : ''}
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
           ${s.avg_velo != null ? `
             <div style="background:#0a1120;border-radius:7px;padding:8px 10px;text-align:center;">

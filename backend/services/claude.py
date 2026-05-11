@@ -281,6 +281,63 @@ Return ONLY a valid JSON array of exactly 6 objects. No markdown fences, no expl
     return []
 
 
+def grade_pitchers_from_trackman(stats_summary: str) -> list[dict]:
+    """
+    Given a plain-text outcome stats summary per pitcher, return a grade + profile
+    for each pitcher. Uses the same profile shape as other extraction functions.
+    """
+    prompt = f"""Grade each pitcher below based solely on their outcome stats from a Trackman CSV.
+
+PITCHER STATS:
+{stats_summary}
+
+Grade each pitcher on this outing using the full plus/minus scale.
+Context matters — a 7K/0HR performance is elite; 2HR/8R in 1 IP is poor.
+Grades MUST differ between pitchers when stats clearly separate them.
+  A   — Dominant: 6+ K, 0-1 BB, 0 HR, high whiff%, near-zero ERA
+  A-  — Excellent: 4+ K, K > BB by large margin, minimal hits/HR
+  B+  — Good: 3+ K, K > BB, few H, limited runs, above-average command
+  B   — Solid: 2-3 K, reasonable control, average outing overall
+  B-  — Above average with a flaw: decent K but walks or hits creeping in
+  C+  — Average with a positive: K roughly = BB, some H, controlled damage
+  C   — Average (baseline): mixed results, no clear strength or weakness
+  C-  — Below average: BB >= K, multiple H, runs allowed, poor command
+  D+  — Poor: high H+BB, HR allowed, significant runs, limited K
+  D   — Very poor: blown outing, multiple HR, large run total
+  F   — Catastrophic: gave up 2+ HR and many runs in minimal IP
+
+Return ONLY a valid JSON array — no markdown fences, no explanation:
+[{{"name": "Last, First", "position": "P", "team": "team code from stats",
+  "grade": "letter grade with plus/minus if applicable",
+  "strengths": ["specific stat-backed strength from this outing"],
+  "concerns": ["specific stat-backed concern from this outing"],
+  "summary": "1-2 sentence assessment of this specific outing"}}]"""
+
+    client = _client()
+    resp = client.messages.create(
+        model=MODEL,
+        max_tokens=900,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    raw = resp.content[0].text.strip()
+    raw = re.sub(r"^```(?:json)?\s*", "", raw)
+    raw = re.sub(r"\s*```$", "", raw)
+    try:
+        result = json.loads(raw)
+        if isinstance(result, list):
+            return result
+    except json.JSONDecodeError:
+        m = re.search(r"\[.*\]", raw, re.DOTALL)
+        if m:
+            try:
+                result = json.loads(m.group())
+                if isinstance(result, list):
+                    return result
+            except Exception:
+                pass
+    return []
+
+
 def interpret_pitch_metrics(summary: str, focus: str = "") -> str:
     """Translate Trackman pitch metrics into plain-language coach explanation."""
     focus_line = f"Focus area: {focus}" if focus else ""

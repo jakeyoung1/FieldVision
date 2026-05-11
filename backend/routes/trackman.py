@@ -13,7 +13,13 @@ PITCH_COLS = [
     "Pitcher", "PitcherTeam", "PitchType", "RelSpeed", "SpinRate",
     "InducedVertBreak", "HorzBreak", "PlateLocHeight", "PlateLocSide",
     "PitchCall", "TaggedPitchType", "AutoPitchType",
+    # outcome stats
+    "KorBB", "PlayResult", "OutsOnPlay", "RunsScored",
 ]
+
+HITS_SET   = {"Single", "Double", "Triple", "HomeRun"}
+STRIKE_SET = {"StrikeCalled", "StrikeSwinging", "FoulBallNotFieldable", "InPlay"}
+SWING_SET  = {"StrikeSwinging", "FoulBallNotFieldable", "InPlay"}
 
 
 def _safe_cols(df: pd.DataFrame, cols: list[str]) -> list[str]:
@@ -62,6 +68,27 @@ async def trackman(
                 if "PitchType" in grp.columns or "TaggedPitchType" in grp.columns:
                     col = "TaggedPitchType" if "TaggedPitchType" in grp.columns else "PitchType"
                     pitcher_stats["pitch_mix"] = grp[col].value_counts().to_dict()
+                # Outcome stats
+                if "KorBB" in grp.columns:
+                    pitcher_stats["strikeouts"] = int((grp["KorBB"] == "Strikeout").sum())
+                    pitcher_stats["walks"]      = int((grp["KorBB"] == "Walk").sum())
+                if "PlayResult" in grp.columns:
+                    pr = grp["PlayResult"].fillna("")
+                    pitcher_stats["hits_allowed"] = int(pr.isin(HITS_SET).sum())
+                    pitcher_stats["home_runs"]    = int((pr == "HomeRun").sum())
+                if "RunsScored" in grp.columns:
+                    pitcher_stats["runs_scored"] = int(grp["RunsScored"].fillna(0).sum())
+                if "OutsOnPlay" in grp.columns:
+                    total_outs = int(grp["OutsOnPlay"].fillna(0).sum())
+                    pitcher_stats["outs_recorded"]   = total_outs
+                    pitcher_stats["innings_pitched"]  = round(total_outs / 3, 1)
+                if "PitchCall" in grp.columns:
+                    total  = len(grp)
+                    strikes = grp["PitchCall"].isin(STRIKE_SET).sum()
+                    pitcher_stats["strike_pct"] = round(float(strikes / total * 100), 1) if total else 0.0
+                    swings = grp["PitchCall"].isin(SWING_SET).sum()
+                    whiffs = (grp["PitchCall"] == "StrikeSwinging").sum()
+                    pitcher_stats["whiff_pct"] = round(float(whiffs / swings * 100), 1) if swings else 0.0
                 stats[str(pitcher)] = pitcher_stats
 
         # Build teams grouping: { teamName: [pitcherName, ...] }
@@ -72,7 +99,9 @@ async def trackman(
 
         # Build plain-text summary for AI interpretation
         summary_lines = []
+        grade_lines   = []
         for pitcher, s in stats.items():
+            # Interpretation summary (velocity / spin / mix)
             line = f"{pitcher}: {s['pitches']} pitches"
             if "avg_velo" in s:
                 line += f", avg {s['avg_velo']} mph (max {s['max_velo']})"
@@ -82,13 +111,31 @@ async def trackman(
                 mix = ", ".join(f"{k}:{v}" for k, v in list(s["pitch_mix"].items())[:4])
                 line += f", mix: {mix}"
             summary_lines.append(line)
+            # Grading summary (outcomes)
+            gline = f"{pitcher} ({s.get('team','')}): {s.get('pitches',0)}P"
+            if "innings_pitched" in s: gline += f" | {s['innings_pitched']}IP"
+            if "strikeouts"      in s: gline += f" | {s['strikeouts']}K"
+            if "walks"           in s: gline += f" | {s['walks']}BB"
+            if "hits_allowed"    in s: gline += f" | {s['hits_allowed']}H"
+            if "home_runs"       in s and s["home_runs"]: gline += f" | {s['home_runs']}HR"
+            if "runs_scored"     in s: gline += f" | {s['runs_scored']}R"
+            if "strike_pct"      in s: gline += f" | str%:{s['strike_pct']}%"
+            if "whiff_pct"       in s: gline += f" | whiff%:{s['whiff_pct']}%"
+            if "avg_velo"        in s: gline += f" | {s['avg_velo']}mph"
+            grade_lines.append(gline)
+
         summary_text = "\n".join(summary_lines)
+        grade_text   = "\n".join(grade_lines)
 
         if not summary_text:
             raise HTTPException(422, "No pitcher data found in this CSV.")
 
-        # AI interpretation
+        # AI interpretation (narrative)
         interpretation = claude.interpret_pitch_metrics(summary_text, focus)
+
+        # Pitcher grades from outcome stats
+        pitcher_grades_list = claude.grade_pitchers_from_trackman(grade_text)
+        pitcher_grades = {pg["name"]: pg for pg in pitcher_grades_list}
 
         return JSONResponse({
             "rows": len(df_clean),
@@ -98,6 +145,7 @@ async def trackman(
             "summary": summary_text,
             "interpretation": interpretation,
             "columns": available,
+            "pitcher_grades": pitcher_grades,
         })
 
     except HTTPException:
