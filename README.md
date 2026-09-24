@@ -132,3 +132,9 @@ git checkout feature/full-stack && git merge main && git push origin feature/ful
 - [ ] Player comparison — side-by-side grade and strengths view
 - [ ] Talent pool filtering — filter by grade, position, and metrics
 - [ ] Custom domain
+
+---
+
+## License
+
+The code is MIT licensed; see [LICENSE](LICENSE). The files in `data/` are not covered by it: `branch-rickey-scouting.csv` holds transcriptions of the Branch Rickey Papers from the Library of Congress's By the People project ("Branch Rickey: Changing the Game"), and `embeddings.npy` is computed from them. Their terms are set by the Library of Congress.
