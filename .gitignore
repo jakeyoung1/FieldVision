@@ -8,3 +8,6 @@ data/embeddings.npy
 __pycache__/
 *.pyc
 .env
+
+# macOS
+.DS_Store
