@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> Active development continues at [jakeyoung1/FieldVision-personal](https://github.com/jakeyoung1/FieldVision-personal) →
+
 # ⚾ FieldVision — Baseball Scouting Intelligence
 
 AI-powered baseball analytics platform for Saint Mary's College of California. Transform handwritten scouting notes into structured reports, interpret Trackman pitching data, and chat with an AI scout — all grounded in Branch Rickey's 1,919 historical scouting documents.
