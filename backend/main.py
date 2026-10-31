@@ -64,8 +64,11 @@ def serve_root():
 
 @app.get("/{path:path}", include_in_schema=False)
 def serve_spa(path: str):
-    """Serve index.html for all non-API routes (SPA fallback)."""
-    file = Path(__file__).parent.parent / path
-    if file.exists() and file.is_file():
-        return FileResponse(str(file))
+    """Serve index.html for all non-API routes (SPA fallback).
+
+    The URL is never mapped onto the filesystem. Doing so served any file the
+    process could read (.env, source, and via ../ anything on the host).
+    Assets live under /static, which StaticFiles serves with its own
+    traversal checks.
+    """
     return FileResponse(str(ROOT_HTML))
